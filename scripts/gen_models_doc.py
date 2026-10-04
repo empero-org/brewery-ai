@@ -27,6 +27,10 @@ def main() -> None:
         "guardrail the agent must stay inside (`propose_training_config` rejects values outside the hard bounds unless the",
         "user grants an expert override; leaving the recommended band only produces a warning).",
         "",
+        "**max_seq_len is sized from your data**: Homebrew measures every training set with the model's own tokenizer and",
+        "chat template and picks the smallest power of two that fits ~90% of the examples (at least 512, at most the model's",
+        "context window from the tables below). 2048 is only the fallback when no measurement is available.",
+        "",
     ]
     for fam in families():
         lines += [f"## {fam.display_name}", "", fam.summary.strip(), "", f"Licence: [{fam.license.name}]({fam.license.url})", ""]
@@ -58,7 +62,9 @@ def main() -> None:
                 if g.resolution is not None:
                     extra.append(f"resolution {fmt_range(g.resolution)}")
                 if g.max_seq_len is not None:
-                    extra.append(f"max_seq_len {fmt_range(g.max_seq_len)}")
+                    r = g.max_seq_len
+                    rec = f", rec. {r.recommended[0]:g}–{r.recommended[1]:g}" if r.recommended else ""
+                    extra.append(f"max_seq_len **auto**{rec}")
                 steps = fmt_range(g.epochs) if fam.modality == "text" else fmt_range(g.max_steps)
                 lines.append(f"| {obj} | {method} | {fmt_range(g.learning_rate)} | {fmt_range(g.rank)} | {steps} | {fmt_range(g.effective_batch)} | {'; '.join(extra)} |")
         if fam.notes:

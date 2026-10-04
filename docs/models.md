@@ -4,6 +4,10 @@ Generated from `src/homebrew_ai/models/profiles/*.yaml` by `scripts/gen_models_d
 guardrail the agent must stay inside (`propose_training_config` rejects values outside the hard bounds unless the
 user grants an expert override; leaving the recommended band only produces a warning).
 
+**max_seq_len is sized from your data**: Homebrew measures every training set with the model's own tokenizer and
+chat template and picks the smallest power of two that fits ~90% of the examples (at least 512, at most the model's
+context window from the tables below). 2048 is only the fallback when no measurement is available.
+
 ## Gemma 3
 
 Google's Gemma 3 (March 2025), from a tiny 270M model up to 27B. 4B and larger can also see images; Homebrew fine-tunes the language part and leaves vision untouched. Repos are gated: accept Google's terms on Hugging Face first.
@@ -26,15 +30,15 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | full | **5e-05** (rec. 1e-05–0.0001) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | full | **5e-05** (rec. 1e-05–0.0001) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 
 Notes:
 
@@ -64,15 +68,15 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–32) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–32) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–32) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–32) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 
 Notes:
 
@@ -101,15 +105,15 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 
 Notes:
 
@@ -144,15 +148,15 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 
 Notes:
 
@@ -189,15 +193,15 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
-| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | qlora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–64) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| sft | full | **1e-05** (rec. 2e-06–3e-05) [1e-07…0.0001] | – | **2** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | qlora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| cpt | full | **2e-05** (rec. 5e-06–5e-05) [1e-07…0.0001] | – | **1** (rec. 1–2) [0.1…10] | **64** (rec. 32–256) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | qlora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–64) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
+| dpo | full | **5e-07** (rec. 1e-07–5e-06) [1e-08…2e-05] | – | **1** (rec. 1–3) [0.1…10] | **32** (rec. 16–128) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 
 Notes:
 
@@ -224,13 +228,13 @@ Guidelines (first variant; individual variants may override):
 
 | Objective | Method | Learning rate | Rank | Epochs / steps | Effective batch | Extra |
 |---|---|---|---|---|---|---|
-| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–32) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| sft | lora | **0.0002** (rec. 5e-05–0.0003) [1e-06…0.001] | **16** (rec. 8–32) | **2** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | max_seq_len **auto**, rec. 512–8192 |
 | sft | qlora | not allowed | | | | QLoRA keeps the frozen base model in 4-bit NF4. It needs an NVIDIA GPU (bitsandbytes) and is slower than LoRA. bitsandby |
 | sft | full | not allowed | | | | Full fine-tuning updates every weight: best quality ceiling, highest memory, easiest to overfit. Full fine-tuning a 35B  |
-| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **2048** (rec. 1024–8192) [128…262144] |
+| cpt | lora | **0.0001** (rec. 3e-05–0.0002) [1e-06…0.001] | **64** (rec. 16–128) | **1** (rec. 1–2) [0.1…10] | **32** (rec. 16–128) [1…1024] | max_seq_len **auto**, rec. 1024–8192 |
 | cpt | qlora | not allowed | | | | QLoRA keeps the frozen base model in 4-bit NF4. It needs an NVIDIA GPU (bitsandbytes) and is slower than LoRA. bitsandby |
 | cpt | full | not allowed | | | | Full fine-tuning updates every weight: best quality ceiling, highest memory, easiest to overfit. Full fine-tuning a 35B  |
-| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–32) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **2048** (rec. 512–8192) [128…262144] |
+| dpo | lora | **5e-06** (rec. 1e-06–5e-05) [1e-07…0.0001] | **16** (rec. 8–32) | **1** (rec. 1–3) [0.1…10] | **16** (rec. 8–64) [1…1024] | β **0.1** (rec. 0.05–0.5) [0.01…1]; max_seq_len **auto**, rec. 512–8192 |
 | dpo | qlora | not allowed | | | | QLoRA keeps the frozen base model in 4-bit NF4. It needs an NVIDIA GPU (bitsandbytes) and is slower than LoRA. bitsandby |
 | dpo | full | not allowed | | | | Full fine-tuning updates every weight: best quality ceiling, highest memory, easiest to overfit. Full fine-tuning a 35B  |
 
