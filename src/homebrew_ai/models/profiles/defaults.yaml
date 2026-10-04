@@ -1,0 +1,138 @@
+# Default hyperparameter guardrails, merged under every model family.
+#
+# Each knob has hard bounds (min/max or choices) that the agent can never leave
+# without an explicit expert override from the user, a default, and an optional
+# "recommended" band that only produces a warning when left.
+#
+# Sources: Unsloth LoRA hyperparameter guide, LLaMA-Factory / Axolotl / ms-swift
+# example configs, Qwen/Meta/Google fine-tuning notes (see docs/models.md).
+
+text:
+  lora:
+    learning_rate: {min: 1.0e-6, max: 1.0e-3, default: 2.0e-4, recommended: [5.0e-5, 3.0e-4]}
+    rank: {choices: [4, 8, 16, 32, 64, 128, 256], default: 16, recommended: [8, 64]}
+    alpha_ratio: {min: 0.5, max: 4, default: 2}
+    dropout: {min: 0.0, max: 0.3, default: 0.0, recommended: [0.0, 0.1]}
+    epochs: {min: 0.1, max: 10, default: 2, recommended: [1, 3]}
+    warmup_ratio: {min: 0.0, max: 0.3, default: 0.05, recommended: [0.0, 0.1]}
+    weight_decay: {min: 0.0, max: 0.3, default: 0.01, recommended: [0.0, 0.1]}
+    max_grad_norm: {min: 0.1, max: 10.0, default: 1.0}
+    effective_batch: {min: 1, max: 1024, default: 16, recommended: [8, 64]}
+    max_seq_len: {min: 128, max: 262144, default: 2048, recommended: [512, 8192]}
+    optimizers: [adamw_torch_fused, adamw_torch, adamw_8bit, paged_adamw_8bit, adafactor]
+    default_optimizer: adamw_torch_fused
+    schedulers: [cosine, linear, constant_with_warmup]
+    default_scheduler: cosine
+  qlora:
+    learning_rate: {min: 1.0e-6, max: 1.0e-3, default: 2.0e-4, recommended: [5.0e-5, 3.0e-4]}
+    rank: {choices: [4, 8, 16, 32, 64, 128, 256], default: 16, recommended: [8, 64]}
+    alpha_ratio: {min: 0.5, max: 4, default: 2}
+    dropout: {min: 0.0, max: 0.3, default: 0.0, recommended: [0.0, 0.1]}
+    epochs: {min: 0.1, max: 10, default: 2, recommended: [1, 3]}
+    warmup_ratio: {min: 0.0, max: 0.3, default: 0.05, recommended: [0.0, 0.1]}
+    weight_decay: {min: 0.0, max: 0.3, default: 0.01, recommended: [0.0, 0.1]}
+    max_grad_norm: {min: 0.1, max: 10.0, default: 1.0}
+    effective_batch: {min: 1, max: 1024, default: 16, recommended: [8, 64]}
+    max_seq_len: {min: 128, max: 262144, default: 2048, recommended: [512, 8192]}
+    optimizers: [paged_adamw_8bit, adamw_8bit, adamw_torch_fused, adamw_torch]
+    default_optimizer: paged_adamw_8bit
+    schedulers: [cosine, linear, constant_with_warmup]
+    default_scheduler: cosine
+    notes:
+      - "QLoRA keeps the frozen base model in 4-bit NF4. It needs an NVIDIA GPU (bitsandbytes) and is slower than LoRA."
+  full:
+    learning_rate: {min: 1.0e-7, max: 1.0e-4, default: 1.0e-5, recommended: [2.0e-6, 3.0e-5]}
+    epochs: {min: 0.1, max: 10, default: 2, recommended: [1, 3]}
+    warmup_ratio: {min: 0.0, max: 0.3, default: 0.03, recommended: [0.0, 0.1]}
+    weight_decay: {min: 0.0, max: 0.3, default: 0.01, recommended: [0.0, 0.1]}
+    max_grad_norm: {min: 0.1, max: 10.0, default: 1.0}
+    effective_batch: {min: 1, max: 1024, default: 32, recommended: [16, 128]}
+    max_seq_len: {min: 128, max: 262144, default: 2048, recommended: [512, 8192]}
+    optimizers: [adamw_8bit, adamw_torch_fused, adamw_torch, adafactor]
+    default_optimizer: adamw_8bit
+    schedulers: [cosine, linear, constant_with_warmup]
+    default_scheduler: cosine
+    notes:
+      - "Full fine-tuning updates every weight: best quality ceiling, highest memory, easiest to overfit."
+  # Objective-specific overrides, merged over the method defaults above.
+  objectives:
+    cpt:
+      lora:
+        learning_rate: {default: 1.0e-4, recommended: [3.0e-5, 2.0e-4]}
+        rank: {default: 64, recommended: [16, 128]}
+        epochs: {default: 1, recommended: [1, 2]}
+        effective_batch: {default: 32, recommended: [16, 128]}
+        max_seq_len: {default: 2048, recommended: [1024, 8192]}
+        notes:
+          - "Continued pretraining (CPT): loss on every token of raw text; documents are packed back-to-back into full-length sequences."
+          - "For a new language or a very different domain, a higher rank and train_embeddings help."
+      qlora:
+        learning_rate: {default: 1.0e-4, recommended: [3.0e-5, 2.0e-4]}
+        rank: {default: 64, recommended: [16, 128]}
+        epochs: {default: 1, recommended: [1, 2]}
+        effective_batch: {default: 32, recommended: [16, 128]}
+        max_seq_len: {default: 2048, recommended: [1024, 8192]}
+      full:
+        learning_rate: {default: 2.0e-5, recommended: [5.0e-6, 5.0e-5]}
+        epochs: {default: 1, recommended: [1, 2]}
+        effective_batch: {default: 64, recommended: [32, 256]}
+        max_seq_len: {default: 2048, recommended: [1024, 8192]}
+    dpo:
+      lora:
+        learning_rate: {min: 1.0e-7, max: 1.0e-4, default: 5.0e-6, recommended: [1.0e-6, 5.0e-5]}
+        epochs: {default: 1, recommended: [1, 3]}
+        beta: {min: 0.01, max: 1.0, default: 0.1, recommended: [0.05, 0.5]}
+        effective_batch: {default: 16, recommended: [8, 64]}
+        warmup_ratio: {default: 0.1}
+        notes:
+          - "DPO teaches the model to prefer the 'chosen' over the 'rejected' answer, relative to where it started. It needs a model that already follows instructions: SFT first when starting from a base model."
+      qlora:
+        learning_rate: {min: 1.0e-7, max: 1.0e-4, default: 5.0e-6, recommended: [1.0e-6, 5.0e-5]}
+        epochs: {default: 1, recommended: [1, 3]}
+        beta: {min: 0.01, max: 1.0, default: 0.1, recommended: [0.05, 0.5]}
+        effective_batch: {default: 16, recommended: [8, 64]}
+        warmup_ratio: {default: 0.1}
+      full:
+        learning_rate: {min: 1.0e-8, max: 2.0e-5, default: 5.0e-7, recommended: [1.0e-7, 5.0e-6]}
+        epochs: {default: 1, recommended: [1, 3]}
+        beta: {min: 0.01, max: 1.0, default: 0.1, recommended: [0.05, 0.5]}
+        effective_batch: {default: 32, recommended: [16, 128]}
+        warmup_ratio: {default: 0.1}
+
+image:
+  lora:
+    learning_rate: {min: 1.0e-6, max: 1.0e-3, default: 1.0e-4, recommended: [3.0e-5, 3.0e-4]}
+    rank: {choices: [4, 8, 16, 32, 64, 128], default: 16, recommended: [8, 64]}
+    alpha_ratio: {min: 0.25, max: 2, default: 1}
+    dropout: {min: 0.0, max: 0.2, default: 0.0}
+    max_steps: {min: 50, max: 20000, default: 1500, recommended: [500, 4000]}
+    warmup_ratio: {min: 0.0, max: 0.2, default: 0.0}
+    weight_decay: {min: 0.0, max: 0.1, default: 0.0}
+    max_grad_norm: {min: 0.1, max: 10.0, default: 1.0}
+    effective_batch: {min: 1, max: 64, default: 1, recommended: [1, 8]}
+    resolution: {choices: [512, 768, 1024, 1328], default: 1024}
+    caption_dropout: {min: 0.0, max: 0.5, default: 0.05}
+    optimizers: [adamw_8bit, adamw_torch]
+    default_optimizer: adamw_8bit
+    schedulers: [constant_with_warmup, cosine, linear]
+    default_scheduler: constant_with_warmup
+  qlora:
+    learning_rate: {min: 1.0e-6, max: 1.0e-3, default: 1.0e-4, recommended: [3.0e-5, 3.0e-4]}
+    rank: {choices: [4, 8, 16, 32, 64, 128], default: 16, recommended: [8, 64]}
+    alpha_ratio: {min: 0.25, max: 2, default: 1}
+    dropout: {min: 0.0, max: 0.2, default: 0.0}
+    max_steps: {min: 50, max: 20000, default: 1500, recommended: [500, 4000]}
+    warmup_ratio: {min: 0.0, max: 0.2, default: 0.0}
+    weight_decay: {min: 0.0, max: 0.1, default: 0.0}
+    max_grad_norm: {min: 0.1, max: 10.0, default: 1.0}
+    effective_batch: {min: 1, max: 64, default: 1, recommended: [1, 8]}
+    resolution: {choices: [512, 768, 1024, 1328], default: 1024}
+    caption_dropout: {min: 0.0, max: 0.5, default: 0.05}
+    optimizers: [adamw_8bit, adamw_torch]
+    default_optimizer: adamw_8bit
+    schedulers: [constant_with_warmup, cosine, linear]
+    default_scheduler: constant_with_warmup
+  full:
+    allowed: false
+    notes:
+      - "Full fine-tuning of image models is not supported in this version; use LoRA."

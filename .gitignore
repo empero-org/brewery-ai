@@ -1,0 +1,17 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+dist/
+build/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Homebrew project workspaces created while testing
+/scratch/
+*.homebrew-session.json
+
+# local tooling
+/.claude/
