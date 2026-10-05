@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+**Fixed**
+- Hardware detection uses ROCm PyTorch to report AMD GPUs, VRAM and BF16 support on Windows without `rocm-smi`.
+- When a GPU operation check fails or is incomplete, Homebrew blocks local GPU training.
+- File operations and SSH commands handle paths with spaces, Unicode and Windows backslashes.
+- Project-relative paths and worker fingerprints use portable separators and consistent ordering.
+
+**Changed**
+- Local commands use the Windows system shell on Windows and Bash or `sh` on POSIX systems.
+
+**Added**
+- Windows ROCm setup instructions include tested dependency constraints that preserve the AMD PyTorch build.
+
 ## 0.1.0 — 2026-10-05 · first public release
 
 **The brewmaster**
