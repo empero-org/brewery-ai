@@ -1,0 +1,74 @@
+family: qwen3_5
+display_name: Qwen3.5
+vendor: Alibaba Qwen
+modality: text
+summary: >-
+  Qwen3.5 dense models (Feb 2026) and architecture-identical successors (Qwen3.6, Qwen3.8,
+  Empero distills). Hybrid attention: 3 of every 4 layers use Gated DeltaNet linear
+  attention, so long contexts are cheap. 262K native context, thinking by default (>=4B).
+license:
+  id: apache-2.0
+  name: Apache License 2.0
+  url: https://www.apache.org/licenses/LICENSE-2.0
+  hub_id: apache-2.0
+requirements:
+  transformers: ">=5.2"
+  packages: ["flash-linear-attention>=0.4.2"]
+loading:
+  auto_class: causal_lm
+  attn_implementation: sdpa
+chat_format:
+  assistant_header: "<|im_start|>assistant\n"
+  turn_end: ["<|im_end|>"]
+  reasoning: native
+  reasoning_field: reasoning_content
+  tools: native
+  tool_args: dict
+  empty_think: "<think>\n\n</think>\n\n"
+  thinking_flag: enable_thinking
+  document_end: "<|endoftext|>"
+stop_tokens: ["<|im_end|>", "<|endoftext|>"]
+lora_targets:
+  default: [q_proj, k_proj, v_proj, o_proj, in_proj_qkv, in_proj_z, out_proj, gate_proj, up_proj, down_proj]
+  attention: [q_proj, k_proj, v_proj, o_proj, in_proj_qkv, in_proj_z, out_proj]
+  mlp: [gate_proj, up_proj, down_proj]
+  classic: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+sampling:
+  default: {temperature: 0.7, top_p: 0.8, top_k: 20}
+  thinking: {temperature: 1.0, top_p: 0.95, top_k: 20}
+guidelines:
+  qlora:
+    notes: ["Unsloth advises against QLoRA for Qwen3.5; prefer bf16 LoRA when the GPU allows it."]
+notes:
+  - "Brewery trains the text model only: the vision encoder and the multi-token-prediction head are dropped on load, so exports are text-only Qwen3_5ForCausalLM checkpoints."
+  - "The default LoRA targets include the Gated DeltaNet projections (in_proj_qkv, in_proj_z, out_proj), which make up 75% of the token-mixing layers. 'classic' targets only attention + MLP like Unsloth."
+  - "Install flash-linear-attention on the training machine (Brewery does it automatically). Without it the linear-attention layers fall back to a much slower PyTorch path."
+  - "Tool calls use Qwen's XML format and tool arguments must be JSON objects."
+  - "Small Qwen3.5 repos ship no generation_config.json; Brewery writes one with the right stop tokens when exporting."
+variants:
+  - {id: Qwen/Qwen3.5-0.8B, label: Qwen3.5 0.8B, params_b: 0.75, layers: 24, linear_attention_layers: 18, hidden: 1024, intermediate: 3584, heads: 8, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true, recommended: true,
+     sampling: {default: {temperature: 1.0, top_p: 1.0, top_k: 20}}, notes: ["Non-thinking by default (empty think block in the prompt)."]}
+  - {id: Qwen/Qwen3.5-2B, label: Qwen3.5 2B, params_b: 1.88, layers: 24, linear_attention_layers: 18, hidden: 2048, intermediate: 6144, heads: 8, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true,
+     sampling: {default: {temperature: 1.0, top_p: 1.0, top_k: 20}}, notes: ["Non-thinking by default (empty think block in the prompt)."]}
+  - {id: Qwen/Qwen3.5-4B, label: Qwen3.5 4B, params_b: 4.21, layers: 32, linear_attention_layers: 24, hidden: 2560, intermediate: 9216, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true, recommended: true}
+  - {id: Qwen/Qwen3.5-9B, label: Qwen3.5 9B, params_b: 8.95, layers: 32, linear_attention_layers: 24, hidden: 4096, intermediate: 12288, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144, recommended: true}
+  - {id: Qwen/Qwen3.5-27B, label: Qwen3.5 27B, params_b: 26.90, layers: 64, linear_attention_layers: 48, hidden: 5120, intermediate: 17408, heads: 24, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144,
+     guidelines: {full: {allowed: false, notes: ["Full fine-tuning a 27B model needs a multi-GPU cluster; use LoRA."]}}}
+  - {id: Qwen/Qwen3.6-27B, label: Qwen3.6 27B, params_b: 26.90, layers: 64, linear_attention_layers: 48, hidden: 5120, intermediate: 17408, heads: 24, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144,
+     guidelines: {full: {allowed: false}}, notes: ["Same architecture as Qwen3.5-27B with a newer checkpoint and template."]}
+  - {id: Qwen/Qwen3.8-27B, label: Qwen3.8 27B, params_b: 26.90, layers: 64, linear_attention_layers: 48, hidden: 5120, intermediate: 17408, heads: 24, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144,
+     guidelines: {full: {allowed: false}}, notes: ["Qwen3.5 architecture. Its template keeps reasoning from earlier turns, so multi-turn reasoning traces are trained as-is."]}
+  - {id: Qwen/Qwen3.5-0.8B-Base, label: Qwen3.5 0.8B Base, kind: base, params_b: 0.75, layers: 24, linear_attention_layers: 18, hidden: 1024, intermediate: 3584, heads: 8, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true}
+  - {id: Qwen/Qwen3.5-2B-Base, label: Qwen3.5 2B Base, kind: base, params_b: 1.88, layers: 24, linear_attention_layers: 18, hidden: 2048, intermediate: 6144, heads: 8, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true}
+  - {id: Qwen/Qwen3.5-4B-Base, label: Qwen3.5 4B Base, kind: base, params_b: 4.21, layers: 32, linear_attention_layers: 24, hidden: 2560, intermediate: 9216, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true}
+  - {id: Qwen/Qwen3.5-9B-Base, label: Qwen3.5 9B Base, kind: base, params_b: 8.95, layers: 32, linear_attention_layers: 24, hidden: 4096, intermediate: 12288, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144}
+  - {id: empero-ai/Qwen3.8-9B-Distill, label: Empero Qwen3.8 9B Distill, publisher: Empero, params_b: 8.95, layers: 32, linear_attention_layers: 24, hidden: 4096, intermediate: 12288, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144,
+     notes: ["Empero's reasoning distill (Qwen3.5-9B architecture, native tool use)."]}
+  - {id: empero-ai/Qwen3.8-4B-Distill, label: Empero Qwen3.8 4B Distill, publisher: Empero, params_b: 4.21, layers: 32, linear_attention_layers: 24, hidden: 2560, intermediate: 9216, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true}
+  - {id: empero-ai/Qwen3.8-2B-Distill, label: Empero Qwen3.8 2B Distill, publisher: Empero, params_b: 1.88, layers: 24, linear_attention_layers: 18, hidden: 2048, intermediate: 6144, heads: 8, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144, tied_embeddings: true}
+  - {id: empero-ai/Qwythos-9B-v2, label: Empero Qwythos 9B v2, publisher: Empero, params_b: 8.95, layers: 32, linear_attention_layers: 24, hidden: 4096, intermediate: 12288, heads: 16, kv_heads: 4, head_dim: 256, vocab: 248320, context: 1048576,
+     chat_format: {empty_think: null},
+     notes: ["Empero's self-checking reasoning model with a 1M-token context (YaRN baked into the config; keep it).", "Its template keeps reasoning on every turn and adds a Qwythos identity line to the system prompt."]}
+  - {id: empero-ai/Qwythos-27B-v1, label: Empero Qwythos 27B v1, publisher: Empero, params_b: 26.90, layers: 64, linear_attention_layers: 48, hidden: 5120, intermediate: 17408, heads: 24, kv_heads: 4, head_dim: 256, vocab: 248320, context: 1048576,
+     chat_format: {empty_think: null}, guidelines: {full: {allowed: false}},
+     notes: ["Empero's 27B reasoning model with a 1M-token context (YaRN baked into the config; keep it)."]}

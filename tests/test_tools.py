@@ -1,9 +1,9 @@
 import json
 
-from homebrew_ai.agent.tools.base import ToolContext, run_tool
-from homebrew_ai.backends.base import ToolCall
-from homebrew_ai.jobs.manager import JobManager
-from homebrew_ai.settings import Settings
+from brewery_ai.agent.tools.base import ToolContext, run_tool
+from brewery_ai.backends.base import ToolCall
+from brewery_ai.jobs.manager import JobManager
+from brewery_ai.settings import Settings
 
 
 def run(ctx, tool_name, **args):

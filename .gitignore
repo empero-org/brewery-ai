@@ -9,9 +9,9 @@ build/
 .coverage
 htmlcov/
 
-# Homebrew project workspaces created while testing
+# Brewery project workspaces created while testing
 /scratch/
-*.homebrew-session.json
+*.brewery-session.json
 
 # local tooling
 /.claude/

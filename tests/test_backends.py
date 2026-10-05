@@ -1,8 +1,8 @@
 import json
 
-from homebrew_ai.backends.base import Message, ToolCall, parse_json_loose, validate_arguments
-from homebrew_ai.backends.openai_backend import OpenAICompatBackend, _calls_from_text, _ToolBlockFilter
-from homebrew_ai.backends.presets import capability_for
+from brewery_ai.backends.base import Message, ToolCall, parse_json_loose, validate_arguments
+from brewery_ai.backends.openai_backend import OpenAICompatBackend, _calls_from_text, _ToolBlockFilter
+from brewery_ai.backends.presets import capability_for
 
 
 def test_validate_arguments():
@@ -19,15 +19,15 @@ def test_parse_json_loose():
 
 
 def test_anthropic_message_rendering_groups_results_and_replays_raw():
-    from homebrew_ai.backends.anthropic_backend import AnthropicBackend
+    from brewery_ai.backends.anthropic_backend import AnthropicBackend
 
     b = AnthropicBackend("claude-opus-5-5", api_key="sk-test")
     raw = [{"type": "thinking", "thinking": "", "signature": "sig"}, {"type": "tool_use", "id": "t1", "name": "x", "input": {}}, {"type": "tool_use", "id": "t2", "name": "y", "input": {}}]
     history = [
-        Message("user", ["hello", "<homebrew_state>s</homebrew_state>"]),
+        Message("user", ["hello", "<brewery_state>s</brewery_state>"]),
         Message("assistant", [], [ToolCall("t1", "x", {}), ToolCall("t2", "y", {})], raw=raw, raw_provider="anthropic"),
         Message("tool", ["r1"], tool_call_id="t1", name="x"),
-        Message("tool", ["r2", "<homebrew_state>s2</homebrew_state>"], tool_call_id="t2", name="y", is_error=True),
+        Message("tool", ["r2", "<brewery_state>s2</brewery_state>"], tool_call_id="t2", name="y", is_error=True),
     ]
     msgs = b._messages(history)
     assert msgs[1]["content"] == raw

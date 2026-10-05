@@ -3,11 +3,11 @@ requires = ["hatchling>=1.27"]
 build-backend = "hatchling.build"
 
 [project]
-name = "homebrew-ai"
+name = "brewery-ai"
 dynamic = ["version"]
-description = "Homebrew by Empero: a guided agent that helps anyone fine-tune ('brew') their own language model."
+description = "Brewery by Empero: a guided agent that helps anyone fine-tune ('brew') their own language model."
 readme = "README.md"
-license = "LicenseRef-Homebrew"
+license = "LicenseRef-Brewery"
 license-files = ["LICENSE"]
 requires-python = ">=3.10"
 authors = [{ name = "Empero", email = "hello@empero.org" }]
@@ -57,18 +57,18 @@ dev = [
 
 [project.urls]
 Homepage = "https://empero.org"
-Source = "https://github.com/empero-org/homebrew-ai"
+Source = "https://github.com/empero-org/brewery-ai"
 "Hugging Face" = "https://huggingface.co/empero-ai"
 
 [project.scripts]
-homebrew = "homebrew_ai.cli:main"
-homebrew-ai = "homebrew_ai.cli:main"
+brewery = "brewery_ai.cli:main"
+brewery-ai = "brewery_ai.cli:main"
 
 [tool.hatch.version]
-path = "src/homebrew_ai/__init__.py"
+path = "src/brewery_ai/__init__.py"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/homebrew_ai"]
+packages = ["src/brewery_ai"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

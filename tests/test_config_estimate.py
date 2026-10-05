@@ -1,8 +1,8 @@
 import pytest
 
-from homebrew_ai.hardware.estimate import TrainShape, autofit, estimate_memory, fitting_gpus
-from homebrew_ai.models.registry import get_model
-from homebrew_ai.train.config import TrainJob, build_job, total_steps, validate_job
+from brewery_ai.hardware.estimate import TrainShape, autofit, estimate_memory, fitting_gpus
+from brewery_ai.models.registry import get_model
+from brewery_ai.train.config import TrainJob, build_job, total_steps, validate_job
 
 
 def make(model_id="Qwen/Qwen3-8B", method="lora", objective="sft", **kw):

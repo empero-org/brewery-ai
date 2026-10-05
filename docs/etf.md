@@ -1,6 +1,6 @@
 # ETF — Empero Trace Format (v1)
 
-ETF is Homebrew's native training-data layout. Files are plain **`.jsonl`**: one JSON object (a *record*) per line.
+ETF is Brewery's native training-data layout. Files are plain **`.jsonl`**: one JSON object (a *record*) per line.
 "ETF" is just the name of the layout — there is no special file extension.
 
 Design goals:
@@ -8,14 +8,14 @@ Design goals:
 - **Everything optional except the essentials.** A record needs exactly one field that defines its kind; every other
   field may be left out. Small datasets stay small, rich agent traces fit too.
 - **One format for every objective.** The same file can feed SFT, continued pretraining (CPT) and preference tuning
-  (DPO); Homebrew picks what each objective needs.
-- **Model-agnostic.** ETF never contains chat-template tokens. Homebrew renders records with each model's own official
+  (DPO); Brewery picks what each objective needs.
+- **Model-agnostic.** ETF never contains chat-template tokens. Brewery renders records with each model's own official
   chat template at training time, so one dataset works for Qwen, Llama and Gemma alike.
 - **Lenient in, canonical out.** Common variants (OpenAI/ShareGPT message shapes, `<think>` tags, string-encoded tool
   arguments, `developer` roles, …) are accepted and normalised.
 
-The machine-readable definition is [`src/homebrew_ai/etf/etf.schema.json`](../src/homebrew_ai/etf/etf.schema.json)
-(`homebrew etf schema` prints it). `homebrew etf validate FILE` checks a file and explains every problem.
+The machine-readable definition is [`src/brewery_ai/etf/etf.schema.json`](../src/brewery_ai/etf/etf.schema.json)
+(`brewery etf schema` prints it). `brewery etf validate FILE` checks a file and explains every problem.
 
 ## Record kinds
 
@@ -33,7 +33,7 @@ A record with more than one defining field is invalid.
 | Field | Type | Meaning |
 |---|---|---|
 | `id` | string / int | your identifier |
-| `meta` | object | free-form metadata; Homebrew reads `source`, `license`, `lang`, `synthetic`, `tags` |
+| `meta` | object | free-form metadata; Brewery reads `source`, `license`, `lang`, `synthetic`, `tags` |
 | `repeat` | int ≥ 1 | use this record N times (upsampling) |
 | `etf` | `1` | optional version marker |
 
@@ -113,7 +113,7 @@ Documents are passed to templates that support them and otherwise added to the s
 ### Chat-template options
 
 `template_kwargs` passes options to the model's chat template for this record, e.g. `{"enable_thinking": false}` or
-`{"reasoning_effort": "low"}`. Homebrew sets `enable_thinking` automatically from whether a record has reasoning.
+`{"reasoning_effort": "low"}`. Brewery sets `enable_thinking` automatically from whether a record has reasoning.
 
 ### Loss control
 
@@ -137,7 +137,7 @@ the model sees at inference time. Empty reasoning blocks that templates insert a
 ```
 
 `chosen` and `rejected` are continuations of `messages`: a string, an assistant message, or a list of messages (e.g. an
-answer that uses tools). For SFT, Homebrew trains on `messages` + `chosen`; for DPO, on the pair. `label` (bool) is
+answer that uses tools). For SFT, Brewery trains on `messages` + `chosen`; for DPO, on the pair. `label` (bool) is
 reserved for unpaired preference methods.
 
 ## Text documents (CPT)
@@ -170,14 +170,14 @@ No chat template is applied; the loss covers the completion (plus an end-of-text
 
 ## Validation
 
-`homebrew etf validate FILE` reports errors (the record is skipped) and warnings (the record is used). Errors include:
+`brewery etf validate FILE` reports errors (the record is skipped) and warnings (the record is used). Errors include:
 no trainable assistant turn, a tool result without a preceding tool call, empty user turns, unknown roles, records with
 no or several defining fields. Warnings include: conversations that don't start with a user turn, unanswered tool calls,
 repeated roles (merged for strict templates), trailing non-assistant messages (dropped), empty captions.
 
 ## Converting other datasets
 
-`homebrew etf convert SOURCE --out data.jsonl` (or the agent's `import_dataset` tool) detects common layouts:
+`brewery etf convert SOURCE --out data.jsonl` (or the agent's `import_dataset` tool) detects common layouts:
 OpenAI-style `messages`, ShareGPT `conversations` (incl. `function_call`/`observation` turns), Alpaca
 `instruction/input/output`, prompt/completion and question/answer pairs, preference `chosen/rejected` (including
 Anthropic-HH strings), and plain `text`. A mapping can rename columns and use Python format templates:

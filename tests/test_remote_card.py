@@ -1,8 +1,8 @@
 import pytest
 
-from homebrew_ai.models.registry import get_model
-from homebrew_ai.package.card import check_repo_name, render_card, suggest_repo_name
-from homebrew_ai.remote.sshutil import SSHParseError, parse_ssh_command
+from brewery_ai.models.registry import get_model
+from brewery_ai.package.card import check_repo_name, render_card, suggest_repo_name
+from brewery_ai.remote.sshutil import SSHParseError, parse_ssh_command
 
 
 def test_parse_ssh_commands():

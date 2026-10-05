@@ -7,8 +7,8 @@ from pathlib import Path
 
 import pytest
 
-from homebrew_ai.remote.sshutil import SSHSpec
-from homebrew_ai.remote.target import SSHTarget
+from brewery_ai.remote.sshutil import SSHSpec
+from brewery_ai.remote.target import SSHTarget
 
 FAKE_SSH = """#!/usr/bin/env python3
 import subprocess, sys

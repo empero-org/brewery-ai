@@ -14,9 +14,9 @@ os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 
 @pytest.fixture(autouse=True)
 def isolated_config(tmp_path, monkeypatch):
-    """Never touch the real ~/.config/homebrew-ai during tests."""
-    monkeypatch.setenv("HOMEBREW_AI_HOME", str(tmp_path / "config"))
-    from homebrew_ai.models import registry
+    """Never touch the real ~/.config/brewery-ai during tests."""
+    monkeypatch.setenv("BREWERY_AI_HOME", str(tmp_path / "config"))
+    from brewery_ai.models import registry
 
     registry.load_profiles.cache_clear()
     yield
@@ -52,7 +52,7 @@ def tiny_model_dir(tmp_path_factory, qwen_tokenizer):
 @pytest.fixture
 def tiny_model(tiny_model_dir):
     """A ResolvedModel describing the tiny model with the qwen3 family profile."""
-    from homebrew_ai.models.registry import from_snapshot, get_model, snapshot
+    from brewery_ai.models.registry import from_snapshot, get_model, snapshot
 
     snap = snapshot(get_model("Qwen/Qwen3-0.6B"))
     snap["variants"][0].update(id=str(tiny_model_dir), label="tiny", params_b=0.01, layers=2, hidden=64, intermediate=128, heads=4, kv_heads=2, head_dim=16)
@@ -115,7 +115,7 @@ def fake_ui():
 
 @pytest.fixture
 def project(tmp_path):
-    from homebrew_ai.project import Project
+    from brewery_ai.project import Project
 
     p = Project.create(tmp_path / "proj", "test-brew")
     p.state.level = "builder"

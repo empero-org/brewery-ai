@@ -4,9 +4,9 @@ import time
 
 import pytest
 
-from homebrew_ai.etf.io import write_records
-from homebrew_ai.jobs.manager import JobManager
-from homebrew_ai.train.config import build_job
+from brewery_ai.etf.io import write_records
+from brewery_ai.jobs.manager import JobManager
+from brewery_ai.train.config import build_job
 
 pytestmark = pytest.mark.slow
 

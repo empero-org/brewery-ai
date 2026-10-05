@@ -1,6 +1,6 @@
 # Architecture
 
-Homebrew has two halves that share one package (`homebrew_ai`) but never import each other's heavy dependencies:
+Brewery has two halves that share one package (`brewery_ai`) but never import each other's heavy dependencies:
 
 ```text
 ┌──────────────── control plane (your laptop) ────────────────┐        ┌────────── worker (GPU machine) ──────────┐
@@ -19,7 +19,7 @@ Homebrew has two halves that share one package (`homebrew_ai`) but never import 
 
 - **Agent loop** (`agent/loop.py`): user message → model → tool calls → results → … until the model answers. History
   is **append-only**. The system prompt is fixed for the session, and the live project state travels in a
-  `<homebrew_state>` block on new user/tool messages. This keeps prompt caches warm and Claude's thinking blocks valid
+  `<brewery_state>` block on new user/tool messages. This keeps prompt caches warm and Claude's thinking blocks valid
   (they are replayed verbatim). Long sessions are compacted by summarising the whole conversation into one message.
 - **Tools** (`agent/tools/`): validated against their JSON schemas before running. Side effects are confirmed by the
   user through the UI inside the tool (money, installs, uploads, sending images to an AI provider, writing SSH keys,
@@ -49,7 +49,7 @@ Homebrew has two halves that share one package (`homebrew_ai`) but never import 
 
 ## Worker
 
-- `homebrew train job.yaml` runs one job; `homebrew chain a/job.yaml b/job.yaml …` runs stages back-to-back.
+- `brewery train job.yaml` runs one job; `brewery chain a/job.yaml b/job.yaml …` runs stages back-to-back.
 - A stage with `init_from` starts from the previous stage's result. Adapters are merged into that stage's own starting
   weights first, recursively, and cached in `<run>/merged`.
 - SFT uses masked samples, CPT packs documents into full-length blocks, DPO tokenises chosen/rejected pairs and
@@ -64,6 +64,6 @@ Homebrew has two halves that share one package (`homebrew_ai`) but never import 
   detected and refused, with instructions to use "SSH over exposed TCP".
 - `prepare_remote` uploads the worker package, creates a virtualenv that reuses the image's PyTorch (installing a
   CUDA-matched build only if needed) and installs the training libraries. It keeps everything under
-  `/workspace/homebrew` when a persistent volume exists.
+  `/workspace/brewery` when a persistent volume exists.
 - The Hugging Face token is passed to remote processes over **stdin** and exported into the process environment; it is
   never written to the remote disk or placed on a command line.

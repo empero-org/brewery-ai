@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from homebrew_ai.models.registry import families, get_model
+from brewery_ai.models.registry import families, get_model
 
 OUT = Path(__file__).resolve().parents[1] / "docs" / "models.md"
 
@@ -23,11 +23,11 @@ def main() -> None:
     lines = [
         "# Supported models",
         "",
-        "Generated from `src/homebrew_ai/models/profiles/*.yaml` by `scripts/gen_models_doc.py`. Every number below is a",
+        "Generated from `src/brewery_ai/models/profiles/*.yaml` by `scripts/gen_models_doc.py`. Every number below is a",
         "guardrail the agent must stay inside (`propose_training_config` rejects values outside the hard bounds unless the",
         "user grants an expert override; leaving the recommended band only produces a warning).",
         "",
-        "**max_seq_len is sized from your data**: Homebrew measures every training set with the model's own tokenizer and",
+        "**max_seq_len is sized from your data**: Brewery measures every training set with the model's own tokenizer and",
         "chat template and picks the smallest power of two that fits ~90% of the examples (at least 512, at most the model's",
         "context window from the tables below). 2048 is only the fallback when no measurement is available.",
         "",

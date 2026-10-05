@@ -2,11 +2,11 @@ import json
 
 import pytest
 
-from homebrew_ai.agent.loop import Agent
-from homebrew_ai.agent.tools.base import REGISTRY
-from homebrew_ai.backends.base import Backend, Message, ToolCall, Turn
-from homebrew_ai.jobs.manager import JobManager
-from homebrew_ai.settings import Settings
+from brewery_ai.agent.loop import Agent
+from brewery_ai.agent.tools.base import REGISTRY
+from brewery_ai.backends.base import Backend, Message, ToolCall, Turn
+from brewery_ai.jobs.manager import JobManager
+from brewery_ai.settings import Settings
 
 
 class ScriptedBackend(Backend):
@@ -65,7 +65,7 @@ def test_tool_round_trip_updates_project_and_keeps_history_valid(project, fake_u
     assert all(r["params_b"] <= 2 for r in models)
     assert json.loads(agent.history[7].parts[0]) == {"answer": "Qwen3 0.6B"}
     # state travels in user/tool messages, the system prompt never changes
-    assert "<homebrew_state>" in agent.history[2].parts[-1]
+    assert "<brewery_state>" in agent.history[2].parts[-1]
     assert len({c["system"] for c in backend.calls}) == 1
     assert all(len(c["tools"]) == len(REGISTRY) for c in backend.calls)
     # session persisted and reloadable
@@ -107,4 +107,4 @@ def test_refusal_and_compaction(project, fake_ui):
     assert any(kind == "warn" for kind, _ in fake_ui.log)
     agent.capability = type(agent.capability)("tiny", False, 10, 1000, 5)
     agent.send("continue")
-    assert agent.history[0].parts[0].startswith("[Homebrew] The conversation was getting long")
+    assert agent.history[0].parts[0].startswith("[Brewery] The conversation was getting long")

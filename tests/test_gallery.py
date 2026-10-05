@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 
 from PIL import Image
 
-from homebrew_ai.ui.gallery import Gallery
+from brewery_ai.ui.gallery import Gallery
 
 from test_ssh_target import fake_ssh  # noqa: F401 - fixture
 
@@ -50,7 +50,7 @@ def test_gallery_serves_page_api_and_images_safely(project):
         status, body, ctype = _get(url, job["sets"][1]["images"][0])
         assert status == 200 and ctype == "image/png" and body[:4] == b"\x89PNG"
         assert _get(url, "img/img1/../status.json")[0] == 404  # nothing outside samples/, only images
-        assert _get(url, "img/img1/../../../homebrew.yaml")[0] == 404
+        assert _get(url, "img/img1/../../../brewery.yaml")[0] == 404
         assert _get(url.replace(g.token, "wrong-token"))[0] == 404
         assert _get(url, host="evil.example:80")[0] == 403  # DNS rebinding
     finally:

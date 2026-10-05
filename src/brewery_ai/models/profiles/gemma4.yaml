@@ -1,0 +1,126 @@
+family: gemma4
+display_name: Gemma 4
+vendor: Google
+modality: text
+summary: >-
+  Google's Gemma 4 (April 2026): Apache-2.0, native system role, thinking mode and
+  tool calling. E2B/E4B are efficient on-device models, 12B/31B dense, 26B-A4B a
+  mixture of experts. Brewery fine-tunes the language part; vision/audio stay as-is.
+license:
+  id: apache-2.0
+  name: Apache License 2.0
+  url: https://ai.google.dev/gemma/docs/gemma_4_license
+  hub_id: apache-2.0
+requirements:
+  transformers: ">=5.6"
+loading:
+  auto_class: causal_lm
+  attn_implementation: sdpa
+  bf16_required: true
+chat_format:
+  assistant_header: "<|turn>model\n"
+  turn_end: ["<turn|>"]
+  reasoning: native
+  reasoning_field: reasoning_content
+  thinking_flag: enable_thinking
+  tools: native
+  tool_args: dict
+  tool_turns_merged: true
+  exclude_within_turn: [["<|tool_response>", "<tool_response|>"]]
+  document_end: "<eos>"
+  document_bos: true
+stop_tokens: ["<turn|>", "<eos>", "<|tool_response>"]
+lora_targets:
+  default: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  attention: [q_proj, k_proj, v_proj, o_proj]
+  mlp: [gate_proj, up_proj, down_proj]
+sampling:
+  default: {temperature: 1.0, top_p: 0.95, top_k: 64}
+guidelines:
+  lora:
+    rank: {choices: [4, 8, 16, 32, 64, 128], default: 16, recommended: [8, 32]}
+notes:
+  - "Needs a GPU with bf16; FlashAttention-2 does not support Gemma 4's 512-dim global heads, so Brewery uses PyTorch SDPA."
+  - "Tool results render inside the model's own turn; Brewery masks them out of the loss so the model only learns its own calls and answers."
+  - "To keep thinking ability, keep at least ~75% of samples with reasoning traces, or train without thinking entirely."
+variants:
+  - id: google/gemma-4-E2B-it
+    label: Gemma 4 E2B
+    params_b: 5.12
+    layers: 35
+    hidden: 1536
+    intermediate: 6144
+    heads: 8
+    kv_heads: 1
+    head_dim: 256
+    vocab: 262144
+    context: 131072
+    tied_embeddings: true
+    recommended: true
+    notes: ["2.3B effective parameters; the per-layer embedding table (frozen) brings the total to 5.1B.", "An initial loss around 13-15 is normal for E2B/E4B."]
+  - id: google/gemma-4-E4B-it
+    label: Gemma 4 E4B
+    params_b: 8.0
+    layers: 42
+    hidden: 2560
+    intermediate: 10240
+    heads: 8
+    kv_heads: 2
+    head_dim: 256
+    vocab: 262144
+    context: 131072
+    tied_embeddings: true
+    recommended: true
+    notes: ["4.5B effective parameters (8.0B with the frozen per-layer embedding table).", "An initial loss around 13-15 is normal for E2B/E4B."]
+  - id: google/gemma-4-12B-it
+    label: Gemma 4 12B
+    params_b: 11.95
+    layers: 48
+    hidden: 3840
+    intermediate: 15360
+    heads: 16
+    kv_heads: 8
+    head_dim: 256
+    vocab: 262144
+    context: 262144
+    tied_embeddings: true
+    min_transformers: ">=5.10"
+    chat_format: {empty_think_inject: "<|channel>thought\n<channel|>"}
+    notes: ["'Unified' model: images and audio are projected straight into the language model (no separate encoders)."]
+  - id: google/gemma-4-26B-A4B-it
+    label: Gemma 4 26B-A4B
+    params_b: 25.8
+    active_params_b: 3.8
+    layers: 30
+    hidden: 2816
+    intermediate: 2112
+    heads: 16
+    kv_heads: 8
+    head_dim: 256
+    vocab: 262144
+    context: 262144
+    tied_embeddings: true
+    experts: 128
+    experts_per_token: 8
+    expert_intermediate: 704
+    chat_format: {empty_think_inject: "<|channel>thought\n<channel|>"}
+    guidelines:
+      qlora: {allowed: false, notes: ["Most of the 26B parameters live in fused expert tensors that bitsandbytes cannot quantize; use bf16 LoRA on an 80 GB GPU."]}
+      full: {allowed: false}
+    notes: ["Mixture of experts: LoRA trains attention and the always-on dense MLP; the router and experts stay frozen."]
+  - id: google/gemma-4-31B-it
+    label: Gemma 4 31B
+    params_b: 31.27
+    layers: 60
+    hidden: 5376
+    intermediate: 21504
+    heads: 32
+    kv_heads: 16
+    head_dim: 256
+    vocab: 262144
+    context: 262144
+    tied_embeddings: true
+    chat_format: {empty_think_inject: "<|channel>thought\n<channel|>"}
+    guidelines: {full: {allowed: false, notes: ["Full fine-tuning a 31B model needs a multi-GPU cluster; use LoRA or QLoRA."]}}
+  - {id: google/gemma-4-E2B, label: Gemma 4 E2B (pt), kind: base, params_b: 5.12, layers: 35, hidden: 1536, intermediate: 6144, heads: 8, kv_heads: 1, head_dim: 256, vocab: 262144, context: 131072, tied_embeddings: true, chat_template_from: google/gemma-4-E2B-it}
+  - {id: google/gemma-4-E4B, label: Gemma 4 E4B (pt), kind: base, params_b: 8.0, layers: 42, hidden: 2560, intermediate: 10240, heads: 8, kv_heads: 2, head_dim: 256, vocab: 262144, context: 131072, tied_embeddings: true, chat_template_from: google/gemma-4-E4B-it}

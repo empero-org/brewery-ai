@@ -1,7 +1,7 @@
 import pytest
 
-from homebrew_ai.etf.render import ChatFormat
-from homebrew_ai.models.registry import all_models, families, get_model, search, summarize
+from brewery_ai.etf.render import ChatFormat
+from brewery_ai.models.registry import all_models, families, get_model, search, summarize
 
 
 def test_profiles_load_and_cover_requested_families():
@@ -58,7 +58,7 @@ def test_moe_restrictions_and_search():
 def test_user_profiles_dir(tmp_path, monkeypatch):
     import yaml
 
-    from homebrew_ai.models import registry
+    from brewery_ai.models import registry
 
     d = tmp_path / "profiles"
     d.mkdir()
@@ -66,6 +66,6 @@ def test_user_profiles_dir(tmp_path, monkeypatch):
     prof["family"] = "my_qwen"
     prof["variants"] = [{**prof["variants"][0], "id": "me/my-model", "label": "Mine"}]
     (d / "mine.yaml").write_text(yaml.safe_dump(prof))
-    monkeypatch.setenv("HOMEBREW_AI_PROFILES", str(d))
+    monkeypatch.setenv("BREWERY_AI_PROFILES", str(d))
     registry.load_profiles.cache_clear()
     assert get_model("me/my-model").family == "my_qwen"

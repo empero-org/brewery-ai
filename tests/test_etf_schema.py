@@ -1,4 +1,4 @@
-from homebrew_ai.etf.schema import content_text, ensure_record, normalize_record, record_fingerprint, record_kind
+from brewery_ai.etf.schema import content_text, ensure_record, normalize_record, record_fingerprint, record_kind
 
 
 def codes(issues, level=None):

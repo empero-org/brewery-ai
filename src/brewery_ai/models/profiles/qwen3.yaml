@@ -1,0 +1,85 @@
+family: qwen3
+display_name: Qwen3
+vendor: Alibaba Qwen
+modality: text
+summary: >-
+  Dense Qwen3 models (April 2025, plus the 2507 refresh). Strong all-rounders with a
+  "hybrid thinking" mode: the same model can answer with or without a <think> block.
+license:
+  id: apache-2.0
+  name: Apache License 2.0
+  url: https://www.apache.org/licenses/LICENSE-2.0
+  hub_id: apache-2.0
+requirements:
+  transformers: ">=4.51"
+loading:
+  auto_class: causal_lm
+  attn_implementation: sdpa
+chat_format:
+  assistant_header: "<|im_start|>assistant\n"
+  turn_end: ["<|im_end|>"]
+  reasoning: native
+  reasoning_field: reasoning_content
+  tools: native
+  tool_args: dict
+  empty_think: "<think>\n\n</think>\n\n"
+  thinking_flag: enable_thinking
+  document_end: "<|endoftext|>"
+stop_tokens: ["<|im_end|>", "<|endoftext|>"]
+lora_targets:
+  default: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  attention: [q_proj, k_proj, v_proj, o_proj]
+  mlp: [gate_proj, up_proj, down_proj]
+sampling:
+  default: {temperature: 0.7, top_p: 0.8, top_k: 20}
+  thinking: {temperature: 0.6, top_p: 0.95, top_k: 20}
+notes:
+  - "Hybrid thinking: answers without reasoning get an empty <think></think> block from the chat template; Brewery excludes it from the loss."
+  - "To keep thinking ability, keep at least ~75% of samples with reasoning traces; training only on plain answers weakens thinking mode."
+  - "Multi-turn conversations with reasoning in several turns are split into one sample per turn, because the template drops earlier reasoning."
+variants:
+  - {id: Qwen/Qwen3-0.6B, label: Qwen3 0.6B, params_b: 0.60, layers: 28, hidden: 1024, intermediate: 3072, heads: 16, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960, tied_embeddings: true, recommended: true,
+     notes: ["Tiny and fast: ideal first brew, and small enough to try on a CPU or a free Colab GPU."]}
+  - {id: Qwen/Qwen3-1.7B, label: Qwen3 1.7B, params_b: 1.72, layers: 28, hidden: 2048, intermediate: 6144, heads: 16, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960, tied_embeddings: true}
+  - {id: Qwen/Qwen3-4B, label: Qwen3 4B, params_b: 4.02, layers: 36, hidden: 2560, intermediate: 9728, heads: 32, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960, tied_embeddings: true}
+  - id: Qwen/Qwen3-4B-Instruct-2507
+    label: Qwen3 4B Instruct 2507
+    params_b: 4.02
+    layers: 36
+    hidden: 2560
+    intermediate: 9728
+    heads: 32
+    kv_heads: 8
+    head_dim: 128
+    vocab: 151936
+    context: 262144
+    tied_embeddings: true
+    recommended: true
+    chat_format: {reasoning: none, empty_think: null, thinking_flag: null}
+    notes: ["Non-thinking model: reasoning traces in your data are ignored unless you choose inline <think> tags."]
+  - id: Qwen/Qwen3-4B-Thinking-2507
+    label: Qwen3 4B Thinking 2507
+    kind: thinking
+    params_b: 4.02
+    layers: 36
+    hidden: 2560
+    intermediate: 9728
+    heads: 32
+    kv_heads: 8
+    head_dim: 128
+    vocab: 151936
+    context: 262144
+    tied_embeddings: true
+    sampling: {default: {temperature: 0.6, top_p: 0.95, top_k: 20}}
+    notes: ["Always thinks: the generation prompt opens <think> automatically, so train it on data with reasoning traces."]
+  - {id: Qwen/Qwen3-8B, label: Qwen3 8B, params_b: 8.19, layers: 36, hidden: 4096, intermediate: 12288, heads: 32, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960, recommended: true}
+  - {id: Qwen/Qwen3-14B, label: Qwen3 14B, params_b: 14.77, layers: 40, hidden: 5120, intermediate: 17408, heads: 40, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960,
+     guidelines: {full: {learning_rate: {default: 5.0e-6}}}}
+  - {id: Qwen/Qwen3-32B, label: Qwen3 32B, params_b: 32.76, layers: 64, hidden: 5120, intermediate: 25600, heads: 64, kv_heads: 8, head_dim: 128, vocab: 151936, context: 40960,
+     guidelines: {full: {allowed: false, notes: ["Full fine-tuning a 32B model needs a multi-GPU cluster; use LoRA or QLoRA."]}}}
+  - {id: Qwen/Qwen3-0.6B-Base, label: Qwen3 0.6B Base, kind: base, params_b: 0.60, layers: 28, hidden: 1024, intermediate: 3072, heads: 16, kv_heads: 8, head_dim: 128, vocab: 151936, context: 32768, tied_embeddings: true, chat_template_from: Qwen/Qwen3-0.6B}
+  - {id: Qwen/Qwen3-1.7B-Base, label: Qwen3 1.7B Base, kind: base, params_b: 1.72, layers: 28, hidden: 2048, intermediate: 6144, heads: 16, kv_heads: 8, head_dim: 128, vocab: 151936, context: 32768, tied_embeddings: true, chat_template_from: Qwen/Qwen3-1.7B}
+  - {id: Qwen/Qwen3-4B-Base, label: Qwen3 4B Base, kind: base, params_b: 4.02, layers: 36, hidden: 2560, intermediate: 9728, heads: 32, kv_heads: 8, head_dim: 128, vocab: 151936, context: 32768, tied_embeddings: true, chat_template_from: Qwen/Qwen3-4B}
+  - {id: Qwen/Qwen3-8B-Base, label: Qwen3 8B Base, kind: base, params_b: 8.19, layers: 36, hidden: 4096, intermediate: 12288, heads: 32, kv_heads: 8, head_dim: 128, vocab: 151936, context: 32768, chat_template_from: Qwen/Qwen3-8B}
+  - {id: Qwen/Qwen3-14B-Base, label: Qwen3 14B Base, kind: base, params_b: 14.77, layers: 40, hidden: 5120, intermediate: 17408, heads: 40, kv_heads: 8, head_dim: 128, vocab: 151936, context: 32768, chat_template_from: Qwen/Qwen3-14B,
+     guidelines: {full: {learning_rate: {default: 5.0e-6}}}}

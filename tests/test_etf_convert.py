@@ -1,7 +1,7 @@
 import pytest
 
-from homebrew_ai.etf.convert import Mapping, convert_row, detect_mapping
-from homebrew_ai.etf.schema import ensure_record
+from brewery_ai.etf.convert import Mapping, convert_row, detect_mapping
+from brewery_ai.etf.schema import ensure_record
 
 
 def conv(rows, mapping=None):

@@ -1,8 +1,8 @@
 import pytest
 
-from homebrew_ai.etf.render import ChatFormat, Renderer, encode_cpt, pack_sequences
-from homebrew_ai.etf.schema import ensure_record
-from homebrew_ai.models.registry import get_model
+from brewery_ai.etf.render import ChatFormat, Renderer, encode_cpt, pack_sequences
+from brewery_ai.etf.schema import ensure_record
+from brewery_ai.models.registry import get_model
 
 
 @pytest.fixture

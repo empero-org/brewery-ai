@@ -1,16 +1,16 @@
 # Supported models
 
-Generated from `src/homebrew_ai/models/profiles/*.yaml` by `scripts/gen_models_doc.py`. Every number below is a
+Generated from `src/brewery_ai/models/profiles/*.yaml` by `scripts/gen_models_doc.py`. Every number below is a
 guardrail the agent must stay inside (`propose_training_config` rejects values outside the hard bounds unless the
 user grants an expert override; leaving the recommended band only produces a warning).
 
-**max_seq_len is sized from your data**: Homebrew measures every training set with the model's own tokenizer and
+**max_seq_len is sized from your data**: Brewery measures every training set with the model's own tokenizer and
 chat template and picks the smallest power of two that fits ~90% of the examples (at least 512, at most the model's
 context window from the tables below). 2048 is only the fallback when no measurement is available.
 
 ## Gemma 3
 
-Google's Gemma 3 (March 2025), from a tiny 270M model up to 27B. 4B and larger can also see images; Homebrew fine-tunes the language part and leaves vision untouched. Repos are gated: accept Google's terms on Hugging Face first.
+Google's Gemma 3 (March 2025), from a tiny 270M model up to 27B. 4B and larger can also see images; Brewery fine-tunes the language part and leaves vision untouched. Repos are gated: accept Google's terms on Hugging Face first.
 
 Licence: [Gemma Terms of Use](https://ai.google.dev/gemma/terms)
 
@@ -43,14 +43,14 @@ Guidelines (first variant; individual variants may override):
 Notes:
 
 - Needs a GPU with bf16 (RTX 30xx/40xx/50xx, A100, H100, L4, ...). On T4/V100 Gemma's activations overflow fp16.
-- Gemma 3 has no native tool-calling or thinking format; Homebrew teaches tool calls as <tool_call> JSON blocks and reasoning as inline <think> blocks.
+- Gemma 3 has no native tool-calling or thinking format; Brewery teaches tool calls as <tool_call> JSON blocks and reasoning as inline <think> blocks.
 - There is no system role: the system prompt is merged into the first user turn by the chat template.
-- Terms of Use: derivatives must pass on Google's use restrictions and include a NOTICE file. Homebrew's packager writes both.
+- Terms of Use: derivatives must pass on Google's use restrictions and include a NOTICE file. Brewery's packager writes both.
 - Gemma's 262k vocabulary makes the logits large; keep sequence length and batch moderate on small GPUs.
 
 ## Gemma 4
 
-Google's Gemma 4 (April 2026): Apache-2.0, native system role, thinking mode and tool calling. E2B/E4B are efficient on-device models, 12B/31B dense, 26B-A4B a mixture of experts. Homebrew fine-tunes the language part; vision/audio stay as-is.
+Google's Gemma 4 (April 2026): Apache-2.0, native system role, thinking mode and tool calling. E2B/E4B are efficient on-device models, 12B/31B dense, 26B-A4B a mixture of experts. Brewery fine-tunes the language part; vision/audio stay as-is.
 
 Licence: [Apache License 2.0](https://ai.google.dev/gemma/docs/gemma_4_license)
 
@@ -80,8 +80,8 @@ Guidelines (first variant; individual variants may override):
 
 Notes:
 
-- Needs a GPU with bf16; FlashAttention-2 does not support Gemma 4's 512-dim global heads, so Homebrew uses PyTorch SDPA.
-- Tool results render inside the model's own turn; Homebrew masks them out of the loss so the model only learns its own calls and answers.
+- Needs a GPU with bf16; FlashAttention-2 does not support Gemma 4's 512-dim global heads, so Brewery uses PyTorch SDPA.
+- Tool results render inside the model's own turn; Brewery masks them out of the loss so the model only learns its own calls and answers.
 - To keep thinking ability, keep at least ~75% of samples with reasoning traces, or train without thinking entirely.
 
 ## Llama 3.x
@@ -117,10 +117,10 @@ Guidelines (first variant; individual variants may override):
 
 Notes:
 
-- License: a published fine-tune must have a name starting with 'Llama', show 'Built with Llama', and ship a copy of the license. Homebrew's packager handles all three.
+- License: a published fine-tune must have a name starting with 'Llama', show 'Built with Llama', and ship a copy of the license. Brewery's packager handles all three.
 - Llama has no native reasoning format: reasoning traces are taught as inline <think>...</think> blocks (or dropped, if you prefer).
 - The Llama chat template allows one tool call per assistant turn; traces with parallel calls are skipped.
-- Base (non-instruct) models have untrained chat-control tokens. Homebrew initialises them to the mean embedding before training.
+- Base (non-instruct) models have untrained chat-control tokens. Brewery initialises them to the mean embedding before training.
 
 ## Qwen3
 
@@ -160,7 +160,7 @@ Guidelines (first variant; individual variants may override):
 
 Notes:
 
-- Hybrid thinking: answers without reasoning get an empty <think></think> block from the chat template; Homebrew excludes it from the loss.
+- Hybrid thinking: answers without reasoning get an empty <think></think> block from the chat template; Brewery excludes it from the loss.
 - To keep thinking ability, keep at least ~75% of samples with reasoning traces; training only on plain answers weakens thinking mode.
 - Multi-turn conversations with reasoning in several turns are split into one sample per turn, because the template drops earlier reasoning.
 
@@ -205,11 +205,11 @@ Guidelines (first variant; individual variants may override):
 
 Notes:
 
-- Homebrew trains the text model only: the vision encoder and the multi-token-prediction head are dropped on load, so exports are text-only Qwen3_5ForCausalLM checkpoints.
+- Brewery trains the text model only: the vision encoder and the multi-token-prediction head are dropped on load, so exports are text-only Qwen3_5ForCausalLM checkpoints.
 - The default LoRA targets include the Gated DeltaNet projections (in_proj_qkv, in_proj_z, out_proj), which make up 75% of the token-mixing layers. 'classic' targets only attention + MLP like Unsloth.
-- Install flash-linear-attention on the training machine (Homebrew does it automatically). Without it the linear-attention layers fall back to a much slower PyTorch path.
+- Install flash-linear-attention on the training machine (Brewery does it automatically). Without it the linear-attention layers fall back to a much slower PyTorch path.
 - Tool calls use Qwen's XML format and tool arguments must be JSON objects.
-- Small Qwen3.5 repos ship no generation_config.json; Homebrew writes one with the right stop tokens when exporting.
+- Small Qwen3.5 repos ship no generation_config.json; Brewery writes one with the right stop tokens when exporting.
 
 ## Qwen3.5 MoE
 
@@ -243,11 +243,11 @@ Notes:
 - LoRA trains attention, the Gated DeltaNet projections and the shared expert; the router and the 256 routed experts stay frozen (the stable, recommended setup).
 - Expert LoRA (PEFT target_parameters) is available as an expert option but is experimental and multiplies memory use.
 - Needs a single GPU with at least 80 GB (A100/H100 80GB, H200, B200, RTX PRO 6000 96GB): all 35B weights are loaded in bf16.
-- Homebrew trains the text model only; exports are text-only checkpoints without the vision encoder and MTP head.
+- Brewery trains the text model only; exports are text-only checkpoints without the vision encoder and MTP head.
 
 ## Qwen-Image
 
-Qwen-Image 2.1 (September 2026): a 7B single-stream diffusion transformer with a Qwen3-VL-8B text encoder. Excellent at rendering text inside images, outputs RGBA. Homebrew trains LoRA adapters that teach it a style, a character or an object.
+Qwen-Image 2.1 (September 2026): a 7B single-stream diffusion transformer with a Qwen3-VL-8B text encoder. Excellent at rendering text inside images, outputs RGBA. Brewery trains LoRA adapters that teach it a style, a character or an object.
 
 Licence: [Qwen Research License (non-commercial)](https://huggingface.co/Qwen/Qwen-Image-2.1/blob/main/LICENSE)
 

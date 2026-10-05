@@ -4,8 +4,8 @@ import json
 
 import pytest
 
-from homebrew_ai.etf.io import write_records
-from homebrew_ai.train.config import build_job
+from brewery_ai.etf.io import write_records
+from brewery_ai.train.config import build_job
 
 pytestmark = pytest.mark.slow
 
@@ -31,9 +31,9 @@ def status(path):
 
 
 def test_sft_lora_full_and_generation(tmp_path, tiny_model):
-    from homebrew_ai.train.export import export_run
-    from homebrew_ai.train.infer import generate
-    from homebrew_ai.train.runner import run
+    from brewery_ai.train.export import export_run
+    from brewery_ai.train.infer import generate
+    from brewery_ai.train.runner import run
 
     lora = stage(tmp_path, tiny_model, "lora", "sft", SFT, over={"learning_rate": 1e-3})
     assert run(lora) == 0 and status(lora)["state"] == "completed"
@@ -41,7 +41,7 @@ def test_sft_lora_full_and_generation(tmp_path, tiny_model):
     out = generate(lora.parent, ["What is 2+2?"], compare_base=True, max_new_tokens=8)
     assert {"prompt", "finetuned", "base"} <= set(out[0])
     exp = export_run(lora.parent, tmp_path / "export-adapter")
-    assert exp["kind"] == "adapter" and "adapter_model.safetensors" in exp["files"] and "homebrew.json" in exp["files"]
+    assert exp["kind"] == "adapter" and "adapter_model.safetensors" in exp["files"] and "brewery.json" in exp["files"]
     merged = export_run(lora.parent, tmp_path / "export-merged", merge=True)
     assert merged["kind"] == "merged" and any(f.endswith(".safetensors") for f in merged["files"])
 
@@ -51,7 +51,7 @@ def test_sft_lora_full_and_generation(tmp_path, tiny_model):
 
 
 def test_regime_cpt_sft_dpo(tmp_path, tiny_model):
-    from homebrew_ai.train.runner import run_chain
+    from brewery_ai.train.runner import run_chain
 
     docs = [{"text": f"Chapter {i}. The brewer mixed {i} measures of malt and waited for the yeast."} for i in range(30)]
     pref = [{"messages": [{"role": "user", "content": f"Describe batch {i}."}], "chosen": f"Batch {i} was golden.", "rejected": "No idea."} for i in range(12)]
@@ -65,7 +65,7 @@ def test_regime_cpt_sft_dpo(tmp_path, tiny_model):
 
 
 def test_failure_is_reported(tmp_path, tiny_model):
-    from homebrew_ai.train.runner import run
+    from brewery_ai.train.runner import run
 
     bad = stage(tmp_path, tiny_model, "bad", "sft", SFT)
     import yaml
@@ -82,9 +82,9 @@ def test_later_stage_can_be_tested_and_exported_from_its_run_folder(tmp_path, ti
     """Review #1: the worker runs test/export inside the run folder and passes "."."""
     from pathlib import Path
 
-    from homebrew_ai.train.export import export_run
-    from homebrew_ai.train.infer import load_finetuned
-    from homebrew_ai.train.runner import run_chain
+    from brewery_ai.train.export import export_run
+    from brewery_ai.train.infer import load_finetuned
+    from brewery_ai.train.runner import run_chain
 
     j1 = stage(tmp_path, tiny_model, "c1", "sft", SFT, over={"learning_rate": 1e-3})
     j2 = stage(tmp_path, tiny_model, "c2", "sft", SFT, init={"job_id": "c1", "kind": "adapter"}, over={"learning_rate": 1e-3}, stage_no=2)
@@ -103,7 +103,7 @@ def test_repaired_token_rows_travel_inside_the_adapter(tmp_path):
     from peft import PeftModel
     from transformers import LlamaConfig, LlamaForCausalLM
 
-    from homebrew_ai.train.model import apply_lora
+    from brewery_ai.train.model import apply_lora
 
     ids = [60, 61]
     for tied in (False, True):

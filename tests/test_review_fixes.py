@@ -1,21 +1,22 @@
 """Regression tests for the correctness review (one test per finding where practical)."""
 
 import io
+import os
 import json
 import types
 from pathlib import Path
 
 import pytest
 
-from homebrew_ai.agent.tools.base import run_tool
-from homebrew_ai.backends.base import ToolCall
-from homebrew_ai.jobs.manager import JobManager, active_job
-from homebrew_ai.models.registry import get_model
-from homebrew_ai.remote import bootstrap
-from homebrew_ai.remote.sshutil import SSHParseError, SSHSpec, parse_ssh_command
-from homebrew_ai.remote.target import SSHTarget
-from homebrew_ai.train.config import build_job, make_job_id
-from homebrew_ai.train.status import STOP_FILE, StatusWriter, read_status
+from brewery_ai.agent.tools.base import run_tool
+from brewery_ai.backends.base import ToolCall
+from brewery_ai.jobs.manager import JobManager, active_job
+from brewery_ai.models.registry import get_model
+from brewery_ai.remote import bootstrap
+from brewery_ai.remote.sshutil import SSHParseError, SSHSpec, parse_ssh_command
+from brewery_ai.remote.target import SSHTarget
+from brewery_ai.train.config import build_job, make_job_id
+from brewery_ai.train.status import STOP_FILE, StatusWriter, read_status
 
 from test_tools import make_ctx, run
 
@@ -173,7 +174,7 @@ def test_stop_uses_a_stop_file_for_the_whole_chain(project):
 
 
 def test_worker_notices_the_stop_file(tmp_path):
-    from homebrew_ai.train import runner
+    from brewery_ai.train import runner
 
     runner._STOP["requested"] = False
     assert not runner.stop_requested(tmp_path)
@@ -186,7 +187,7 @@ def test_worker_notices_the_stop_file(tmp_path):
 
 
 def test_resolve_start_works_from_inside_the_run_folder(tiny_model, tmp_path, monkeypatch):
-    from homebrew_ai.train.runner import resolve_start
+    from brewery_ai.train.runner import resolve_start
 
     def make(name, method, init=None):
         job, _ = build_job(model=tiny_model, project="t", method=method, init_from=init, stage=2 if init else 1, train_path="data/train.jsonl",
@@ -219,7 +220,7 @@ def _final(content, stop="end_turn"):
 
 def test_claude_fallback_drops_the_declined_models_tool_calls():
     pytest.importorskip("anthropic")
-    from homebrew_ai.backends.anthropic_backend import AnthropicBackend
+    from brewery_ai.backends.anthropic_backend import AnthropicBackend
 
     b = AnthropicBackend("claude-opus-5-5", api_key="test")
     content = [
@@ -237,7 +238,7 @@ def test_claude_fallback_drops_the_declined_models_tool_calls():
 
 def test_claude_refusal_leaves_a_valid_history_entry():
     pytest.importorskip("anthropic")
-    from homebrew_ai.backends.anthropic_backend import AnthropicBackend
+    from brewery_ai.backends.anthropic_backend import AnthropicBackend
 
     b = AnthropicBackend("claude-opus-5-5", api_key="test")
     turn = b._to_turn(_final([_Block(type="tool_use", id="t1", name="x", input={})], "refusal"))
@@ -247,7 +248,7 @@ def test_claude_refusal_leaves_a_valid_history_entry():
 
 def test_unknown_blocks_are_replayed_with_wire_names():
     pytest.importorskip("anthropic")
-    from homebrew_ai.backends.anthropic_backend import _block_to_param
+    from brewery_ai.backends.anthropic_backend import _block_to_param
 
     assert _block_to_param(_Block(type="future_block", from_={"model": "m"})) == {"type": "future_block", "from": {"model": "m"}}
 
@@ -260,7 +261,7 @@ def test_unknown_blocks_are_replayed_with_wire_names():
     ("Unrecognized request argument supplied: tools", True),
 ])
 def test_text_tool_mode_only_for_real_tool_errors(text, expected):
-    from homebrew_ai.backends.openai_backend import _no_tool_support
+    from brewery_ai.backends.openai_backend import _no_tool_support
 
     assert _no_tool_support(text) is expected
 
@@ -269,7 +270,7 @@ def test_text_tool_mode_only_for_real_tool_errors(text, expected):
 
 
 def _console_ui():
-    from homebrew_ai.ui.console import ConsoleUI
+    from brewery_ai.ui.console import ConsoleUI
 
     ui = ConsoleUI(color=False)
     ui.console.file = io.StringIO()
@@ -336,7 +337,7 @@ class _SlowWriter:
 
 
 def test_transform_runs_batches_in_parallel_and_reports_progress():
-    from homebrew_ai.data import synth
+    from brewery_ai.data import synth
 
     rows = [{"messages": [{"role": "user", "content": f"q{i}"}, {"role": "assistant", "content": f"answer {i}"}]} for i in range(10)]
     backend, said = _SlowWriter(), []
@@ -351,7 +352,7 @@ def test_transform_runs_batches_in_parallel_and_reports_progress():
 
 
 def test_ctrl_c_keeps_finished_batches():
-    from homebrew_ai.data import synth
+    from brewery_ai.data import synth
 
     rows = [{"messages": [{"role": "user", "content": f"q{i}"}, {"role": "assistant", "content": f"answer {i}"}]} for i in range(12)]
     saved = []
@@ -365,8 +366,8 @@ def test_ctrl_c_keeps_finished_batches():
 
 
 def test_synthetic_batches_are_saved_as_they_finish(project, fake_ui):
-    from homebrew_ai.agent.tools.base import ToolContext
-    from homebrew_ai.settings import Settings
+    from brewery_ai.agent.tools.base import ToolContext
+    from brewery_ai.settings import Settings
 
     ctx = make_ctx(project, fake_ui)
     rows = [{"messages": [{"role": "user", "content": f"q{i}"}, {"role": "assistant", "content": f"answer {i}"}]} for i in range(10)]
@@ -399,7 +400,7 @@ def test_clean_dataset_drops_empty_duplicate_and_matching_records(project, fake_
 def test_numbered_prompts_in_the_desktop_terminal(monkeypatch):
     ui = _console_ui()
     ui.console.width = 120
-    monkeypatch.delenv("HOMEBREW_AI_SIMPLE_PROMPTS", raising=False)
+    monkeypatch.delenv("BREWERY_AI_SIMPLE_PROMPTS", raising=False)
     monkeypatch.setenv("TERM_PROGRAM", "other")
     assert not ui.simple
     monkeypatch.setenv("TERM_PROGRAM", "claude-desktop")
@@ -457,8 +458,8 @@ class _FakeTransformer:
 def test_previews_render_with_the_model_in_memory(tmp_path):
     import torch
 
-    from homebrew_ai.train.image import Previews, preview_prompts
-    from homebrew_ai.train.config import ImageSettings
+    from brewery_ai.train.image import Previews, preview_prompts
+    from brewery_ai.train.config import ImageSettings
 
     settings = ImageSettings(trigger_word="sks")
     captions = [["sks dog on grass"], ["sks dog on grass"], ["sks dog in snow"], ["sks dog asleep"], ["sks dog running"]]
@@ -488,7 +489,7 @@ def test_previews_render_with_the_model_in_memory(tmp_path):
 def test_a_failing_preview_turns_previews_off_but_not_training(tmp_path):
     import torch
 
-    from homebrew_ai.train.image import Previews
+    from brewery_ai.train.image import Previews
 
     status = StatusWriter(tmp_path)
     transformer = _FakeTransformer()
@@ -518,7 +519,7 @@ def test_watching_an_image_job_downloads_and_shows_new_previews(project, fake_ui
 
 
 def test_image_lora_can_be_exported_from_a_checkpoint(tmp_path, monkeypatch):
-    from homebrew_ai.train import export
+    from brewery_ai.train import export
 
     monkeypatch.setattr(export, "copy_license_files", lambda *a, **k: [])
     info = get_model("Qwen/Qwen-Image-2.1")
@@ -534,7 +535,7 @@ def test_image_lora_can_be_exported_from_a_checkpoint(tmp_path, monkeypatch):
     out = export.export_run(tmp_path, tmp_path / "out", checkpoint=250)
     assert (tmp_path / "out/pytorch_lora_weights.safetensors").read_text() == "step250"
     assert (tmp_path / "out/samples/sample_00.png").read_text() == "png@250"
-    assert json.loads((tmp_path / "out/homebrew.json").read_text())["checkpoint_step"] == 250
+    assert json.loads((tmp_path / "out/brewery.json").read_text())["checkpoint_step"] == 250
     with pytest.raises(FileNotFoundError, match="kept checkpoints: 250"):
         export.export_run(tmp_path, tmp_path / "out2", checkpoint=500)
 
@@ -542,7 +543,7 @@ def test_image_lora_can_be_exported_from_a_checkpoint(tmp_path, monkeypatch):
 def test_private_upload_never_lands_in_an_existing_public_repo(tmp_path, monkeypatch):
     import huggingface_hub
 
-    from homebrew_ai.train.export import push_folder
+    from brewery_ai.train.export import push_folder
 
     uploads = []
 
@@ -573,7 +574,7 @@ def test_private_upload_never_lands_in_an_existing_public_repo(tmp_path, monkeyp
     ("http://localhost:11434/v1", {}),
 ])
 def test_synthetic_data_can_ask_for_less_reasoning(base_url, expected, monkeypatch):
-    from homebrew_ai.backends.openai_backend import OpenAICompatBackend as OpenAIBackend
+    from brewery_ai.backends.openai_backend import OpenAICompatBackend as OpenAIBackend
 
     b = OpenAIBackend("xiaomi/mimo-v2.6-pro", api_key="x", base_url=base_url)
     seen = {}
@@ -587,8 +588,8 @@ def test_synthetic_data_can_ask_for_less_reasoning(base_url, expected, monkeypat
 
 
 def test_rewrites_default_to_no_thinking(project, fake_ui):
-    from homebrew_ai.agent.tools.base import ToolContext
-    from homebrew_ai.settings import Settings
+    from brewery_ai.agent.tools.base import ToolContext
+    from brewery_ai.settings import Settings
 
     rows = [{"messages": [{"role": "user", "content": f"q{i}"}, {"role": "assistant", "content": f"answer {i}"}]} for i in range(4)]
     run(make_ctx(project, fake_ui), "add_examples", name="plain", records=rows)
@@ -634,7 +635,7 @@ def test_image_import_keeps_original_files_and_reports_progress(tmp_path, monkey
     import datasets
     from PIL import Image
 
-    from homebrew_ai.data import images
+    from brewery_ai.data import images
 
     def encoded(fmt, color):
         buf = io.BytesIO()
@@ -674,9 +675,54 @@ def test_image_import_keeps_original_files_and_reports_progress(tmp_path, monkey
 
 
 def test_card_usage_code_points_at_the_final_repo(tmp_path):
-    from homebrew_ai.train.export import fix_card_repo
+    from brewery_ai.train.export import fix_card_repo
 
     (tmp_path / "README.md").write_text('model = PeftModel.from_pretrained(base, "Grandmas-Kitchen")\ntok = AutoTokenizer.from_pretrained("Grandmas-Kitchen")\n')
     assert fix_card_repo(tmp_path, "Grandmas-Kitchen", "empero-ai/Grandmas-Kitchen")
     assert (tmp_path / "README.md").read_text().count('"empero-ai/Grandmas-Kitchen"') == 2
     assert not fix_card_repo(tmp_path, "empero-ai/Grandmas-Kitchen", "empero-ai/Grandmas-Kitchen")
+
+
+# --- rename: Homebrew-era setups keep working --------------------------------------
+
+
+def test_homebrew_era_project_is_renamed_on_open(tmp_path):
+    from brewery_ai.paths import find_project_root
+    from brewery_ai.project import Project
+
+    root = tmp_path / "old-brew"
+    Project.create(root, "old-brew")
+    (root / "brewery.yaml").rename(root / "homebrew.yaml")
+    (root / ".brewery").rename(root / ".homebrew")
+    text = (root / "homebrew.yaml").read_text().replace("brewery_version", "homebrew_version")
+    (root / "homebrew.yaml").write_text(text)
+    assert find_project_root(root / "data") == root
+    project = Project.load(root)
+    assert project.state.name == "old-brew" and (root / "brewery.yaml").exists() and (root / ".brewery").is_dir()
+    assert not (root / "homebrew.yaml").exists()
+
+
+def test_old_config_dir_and_env_vars_are_picked_up(tmp_path, monkeypatch):
+    from brewery_ai import cli, paths
+
+    monkeypatch.delenv("BREWERY_AI_HOME", raising=False)
+    monkeypatch.delenv("HOMEBREW_AI_HOME", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path))
+    (tmp_path / "homebrew-ai").mkdir()
+    (tmp_path / "homebrew-ai" / "settings.yaml").write_text("x: 1\n")
+    assert paths.config_dir() == tmp_path / "brewery-ai" and (tmp_path / "brewery-ai" / "settings.yaml").exists()
+    monkeypatch.setenv("HOMEBREW_AI_THINKING", "off")
+    monkeypatch.delenv("BREWERY_AI_THINKING", raising=False)
+    cli.main(["models", "--modality", "image"])
+    assert os.environ["BREWERY_AI_THINKING"] == "off"
+
+
+def test_job_files_from_before_the_rename_still_load(tmp_path, tiny_model):
+    from brewery_ai.train.config import TrainJob
+
+    job, _ = build_job(model=tiny_model, project="t", method="lora", train_path="data/train.jsonl", eval_path=None, num_train=8, bf16=False,
+                       overrides={"max_seq_len": 64, "optimizer": "adamw_torch"}, expert_override=True)
+    job.save(tmp_path / "job.yaml")
+    old = (tmp_path / "job.yaml").read_text().replace("brewery_version", "homebrew_version")
+    (tmp_path / "job.yaml").write_text(old)
+    assert TrainJob.load(tmp_path / "job.yaml").brewery_version == job.brewery_version

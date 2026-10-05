@@ -1,6 +1,6 @@
-# 🍺 Homebrew
+# 🍺 Brewery
 
-**Brew your own AI model.** Homebrew is a guided agent for fine-tuning language and image models. You chat with the
+**Brew your own AI model.** Brewery is a guided agent for fine-tuning language and image models. You chat with the
 *brewmaster* — an AI of your choice (Claude, any OpenAI-compatible model, or a local model) — and it walks you through
 everything: what you want the model to do, where to train it, which base model fits, finding and preparing data,
 picking safe hyperparameters, running the training (on your GPU or a rented server), testing the result, and
@@ -8,13 +8,16 @@ publishing it on Hugging Face with a proper model card.
 
 It is built for everyone from complete beginners to experts who just want the busywork automated.
 
+> **Formerly Homebrew.** Renamed to Brewery in 0.2.0 so it isn't confused with the macOS package manager. Old links
+> redirect, and projects and settings from Homebrew are picked up automatically.
+
 <sub>Made by [Empero](https://empero.org) — independent AI research lab, open by default. · [GitHub](https://github.com/empero-org) · [Hugging Face](https://huggingface.co/empero-ai)</sub>
 
 ---
 
-## Brewed with Homebrew
+## Brewed with Brewery
 
-Two demo models, each made start to finish in one guided session on a single rented GPU (an RTX PRO 5000 on
+Two demo models (brewed while the project was still called Homebrew), each made start to finish in one guided session on a single rented GPU (an RTX PRO 5000 on
 Vast.ai), with `xiaomi/mimo-v2.6-pro` on OpenRouter as the brewmaster:
 
 | Model | What it is | How it was brewed |
@@ -22,7 +25,7 @@ Vast.ai), with `xiaomi/mimo-v2.6-pro` on OpenRouter as the brewmaster:
 | [**Homebrew-Qwen3.5-2B-Grandmas-Kitchen**](https://huggingface.co/empero-ai/Homebrew-Qwen3.5-2B-Grandmas-Kitchen) | Qwen3.5 2B that writes home-cooking recipes in a warm, chatty grandma voice | public recipe dataset → cleaned → rewritten in the grandma voice with opt-in synthetic data → LoRA SFT (826 examples, ~2 epochs) |
 | [**Homebrew-Qwen-Image-2.1-Y2K**](https://huggingface.co/empero-ai/Homebrew-Qwen-Image-2.1-Y2K) | Qwen-Image 2.1 LoRA for the early-2000s digicam snapshot look (trigger `y2kphoto`) | Hugging Face image dataset (160 photos with captions) + trigger word → LoRA with preview images at every checkpoint → the step-500 checkpoint picked from the previews |
 
-The model cards (training regime, data, licences, credits, before/after samples) were written by Homebrew too.
+The model cards (training regime, data, licences, credits, before/after samples) were written by Brewery too.
 
 ## What it can do
 
@@ -42,21 +45,21 @@ The model cards (training regime, data, licences, credits, before/after samples)
 - **ETF (Empero Trace Format):** one `.jsonl` format for chats, system prompts, tool schemas and calls, reasoning, RAG
   documents, preference pairs, raw text, completions and images. See [docs/etf.md](docs/etf.md).
 - **Train anywhere:** your own NVIDIA GPU, or any SSH server. Step-by-step guides for renting on **Runpod** and
-  **Vast.ai** (with price estimates). Homebrew prepares the server and runs jobs detached; it follows progress live.
+  **Vast.ai** (with price estimates). Brewery prepares the server and runs jobs detached; it follows progress live.
 - **Bottle and share:** export adapters or merged models, a generated model card (training regime, data, licences,
   credits), licence compliance (Llama naming, Gemma terms, non-commercial notices) and upload to Hugging Face.
 
 ## Quick start
 
 ```bash
-pip install "homebrew-ai @ git+https://github.com/empero-org/homebrew-ai"
+pip install "brewery-ai @ git+https://github.com/empero-org/brewery-ai"
 ```
 
 ```bash
-homebrew
+brewery
 ```
 
-On the first run Homebrew asks which AI should guide you and for its API key (stored only on your computer, readable
+On the first run Brewery asks which AI should guide you and for its API key (stored only on your computer, readable
 only by you). Then it asks your experience level and a project name, creates a project folder and the conversation
 begins:
 
@@ -78,10 +81,10 @@ Training happens on the machine with the GPU, so the laptop only needs the light
 NVIDIA GPU and want to train locally, also install the training extras:
 
 ```bash
-pip install "homebrew-ai[train] @ git+https://github.com/empero-org/homebrew-ai"
+pip install "brewery-ai[train] @ git+https://github.com/empero-org/brewery-ai"
 ```
 
-Close the terminal at any time: training keeps running, and `homebrew` in the project folder picks up where you left off.
+Close the terminal at any time: training keeps running, and `brewery` in the project folder picks up where you left off.
 
 ## How a brew works
 
@@ -98,7 +101,7 @@ Close the terminal at any time: training keeps running, and `homebrew` in the pr
 | 🚀 Sharing | upload to Hugging Face (private by default), and a reminder to switch off rented servers |
 
 Anything that costs money, installs software, sends your data elsewhere or publishes something asks for your
-confirmation inside Homebrew. The AI cannot skip these prompts. Passwords, API keys and tokens never go through the chat.
+confirmation inside Brewery. The AI cannot skip these prompts. Passwords, API keys and tokens never go through the chat.
 
 ## Choosing the guiding AI
 
@@ -110,9 +113,9 @@ confirmation inside Homebrew. The AI cannot skip these prompts. Passwords, API k
 | Ollama / LM Studio | free and local; use a 14B+ model with tool calling for good results |
 | Custom | any OpenAI-compatible server (vLLM, llama.cpp, …) |
 
-Homebrew adapts to the model: strong models get the full toolset, small local models get step-by-step guidance and
+Brewery adapts to the model: strong models get the full toolset, small local models get step-by-step guidance and
 phase-scoped tools. Models without native tool calling are driven through a text protocol automatically. Change the
-guide any time with `homebrew setup`.
+guide any time with `brewery setup`.
 
 ## Regimes: CPT → SFT → DPO
 
@@ -122,7 +125,7 @@ stages are merged into their starting weights before the next stage begins, so s
 - **SFT** — the common case: an instruct model learns your behaviour, style, format or tools.
 - **CPT → SFT** — teach a base model a domain or language from raw text, then how to chat.
 - **SFT → DPO** — sharpen preferences. Preference pairs can come from Hugging Face, from synthetic generation, or from
-  your model itself: Homebrew samples two answers per prompt (`generate_candidates`) and you pick the better one in
+  your model itself: Brewery samples two answers per prompt (`generate_candidates`) and you pick the better one in
   the terminal (`review_candidates`), or let the guiding AI judge with a rubric and spot-check its verdicts.
 
 DPO uses reference log-probabilities computed once from the stage's starting model, so it needs no second model in
@@ -131,12 +134,12 @@ memory, for LoRA and full fine-tuning alike.
 ## Watching an image LoRA learn
 
 Qwen-Image LoRA runs render preview images while they train: a "before" set at step 0 (the base model), then one
-set with every checkpoint, always with the same seeds so you can compare. While you watch, Homebrew downloads each
+set with every checkpoint, always with the same seeds so you can compare. While you watch, Brewery downloads each
 new set to `runs/<job>/samples/step_NNNNNN/` and prints the folder; ask the brewmaster for specific preview prompts
 (include the trigger word) or a different interval. Every preview set has a saved checkpoint next to it, so if
 step 500 looks better than the end, ask the brewmaster to package that checkpoint instead.
 
-For a side-by-side view, type `/gallery` (or ask the brewmaster): Homebrew serves a one-page gallery on your own
+For a side-by-side view, type `/gallery` (or ask the brewmaster): Brewery serves a one-page gallery on your own
 computer (`http://127.0.0.1:8765/<random token>/`, never reachable from outside). Rows are checkpoints, columns are
 the preview prompts; it refreshes while training runs and downloads new sets from the server by itself. Click a
 picture to enlarge it, use ←/→ to walk through the checkpoints for one prompt, and C to compare with the base model.
@@ -144,7 +147,7 @@ picture to enlarge it, use ←/→ to walk through the checkpoints for one promp
 ## Making data
 
 Most brews start from a Hugging Face dataset, your own files, or examples you write with the brewmaster. Synthetic
-data is opt-in (Homebrew shows your provider's terms first) and always shaped to your request: write new
+data is opt-in (Brewery shows your provider's terms first) and always shaped to your request: write new
 conversations from a brief, rewrite an existing dataset (for example "answer like a cozy grandma"), or create
 preference pairs for DPO. Batches run in parallel with a live progress line and are saved as they finish, so a
 cancelled run keeps its work. Reasoning models are asked not to think for simple rewrites (several times faster in
@@ -152,23 +155,23 @@ our tests). `clean_dataset` drops empty, duplicate or broken records (with a bac
 
 ## Renting a GPU
 
-Homebrew never creates accounts or spends money for you. It recommends a GPU that fits (with approximate Runpod and
+Brewery never creates accounts or spends money for you. It recommends a GPU that fits (with approximate Runpod and
 Vast.ai prices), creates an SSH key, and walks you through renting. Then you paste the provider's SSH command and
-Homebrew takes over: hardware check, environment setup, data upload, training, results. Billing notes are part of the
+Brewery takes over: hardware check, environment setup, data upload, training, results. Billing notes are part of the
 guide. Stopped pods and instances still bill for storage, so destroy them when you're done.
 
 ## Command line
 
 | Command | Purpose |
 |---|---|
-| `homebrew` | start or resume the guided session in the current project |
-| `homebrew new NAME` | new project |
-| `homebrew setup` | choose/change the guiding AI |
-| `homebrew doctor` | check installation, guiding AI, Hugging Face login, hardware |
-| `homebrew hardware [--ssh "ssh …"]` | hardware report of this computer or a server |
-| `homebrew models [--modality text\|image] [--all]` | supported base models |
-| `homebrew status [JOB]` | training jobs of the current project |
-| `homebrew etf validate\|stats\|convert\|schema` | work with ETF files |
+| `brewery` | start or resume the guided session in the current project |
+| `brewery new NAME` | new project |
+| `brewery setup` | choose/change the guiding AI |
+| `brewery doctor` | check installation, guiding AI, Hugging Face login, hardware |
+| `brewery hardware [--ssh "ssh …"]` | hardware report of this computer or a server |
+| `brewery models [--modality text\|image] [--all]` | supported base models |
+| `brewery status [JOB]` | training jobs of the current project |
+| `brewery etf validate\|stats\|convert\|schema` | work with ETF files |
 
 Inside a session: `/status`, `/jobs`, `/watch`, `/gallery`, `/level`, `/usage`, `/thinking`, `/help`, `/quit`.
 
@@ -178,27 +181,27 @@ it, `/thinking off` hides it). Environment switches:
 
 | Variable | Effect |
 |---|---|
-| `HOMEBREW_AI_PLAIN_INPUT=1` | plain `you ▸` prompt instead of the framed input bar (for very limited terminals) |
-| `HOMEBREW_AI_SIMPLE_PROMPTS=1` | numbered choices instead of arrow-key menus (automatic in narrow terminals) |
-| `HOMEBREW_AI_THINKING=on\|full\|off` | initial thinking display |
-| `HOMEBREW_AI_SYNTH_WORKERS=4` | parallel requests for synthetic data (1–16) |
+| `BREWERY_AI_PLAIN_INPUT=1` | plain `you ▸` prompt instead of the framed input bar (for very limited terminals) |
+| `BREWERY_AI_SIMPLE_PROMPTS=1` | numbered choices instead of arrow-key menus (automatic in narrow terminals) |
+| `BREWERY_AI_THINKING=on\|full\|off` | initial thinking display |
+| `BREWERY_AI_SYNTH_WORKERS=4` | parallel requests for synthetic data (1–16) |
 
-Worker commands (run on the training machine, used by Homebrew itself): `homebrew train JOB.yaml`,
-`homebrew chain JOB.yaml…`, `homebrew test`, `homebrew candidates`, `homebrew export`, `homebrew push`.
+Worker commands (run on the training machine, used by Brewery itself): `brewery train JOB.yaml`,
+`brewery chain JOB.yaml…`, `brewery test`, `brewery candidates`, `brewery export`, `brewery push`.
 
 ## Project layout
 
 ```text
 my-pirate-bot/
-  homebrew.yaml        decisions and state (goal, model, compute, datasets, drafts, jobs, exports)
+  brewery.yaml        decisions and state (goal, model, compute, datasets, drafts, jobs, exports)
   data/                ETF datasets + manifests (source, licence, mapping)
   data/_sets/<name>/   training sets built from datasets (train.jsonl, eval.jsonl, images/)
   runs/<job_id>/       job.yaml, data copy, status.json, metrics.jsonl, train.log, final/ (adapter/model)
-  .homebrew/           conversation history (to resume)
+  .brewery/           conversation history (to resume)
 ```
 
-User settings live in `~/.config/homebrew-ai/` (`settings.yaml`, `credentials.yaml` with mode 600). Extra model
-profiles can be dropped into `~/.config/homebrew-ai/profiles/` (same schema as the shipped ones).
+User settings live in `~/.config/brewery-ai/` (`settings.yaml`, `credentials.yaml` with mode 600). Extra model
+profiles can be dropped into `~/.config/brewery-ai/profiles/` (same schema as the shipped ones).
 
 ## Documentation
 
@@ -222,7 +225,7 @@ APIs (opt-in, with spending limits).
 
 ## Licence
 
-Homebrew is released under the **Homebrew License**: MIT terms for individuals and organisations up to USD 2,000,000
+Brewery is released under the **Brewery License**: MIT terms for individuals and organisations up to USD 2,000,000
 gross monthly revenue (averaged over twelve months, including affiliates). Larger organisations need a commercial licence
-from Empero (hello@empero.org). Models and data you create with Homebrew are yours, subject to the licences of the base
+from Empero (hello@empero.org). Models and data you create with Brewery are yours, subject to the licences of the base
 models and datasets you used. See [LICENSE](LICENSE).

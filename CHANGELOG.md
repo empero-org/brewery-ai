@@ -1,6 +1,18 @@
 # Changelog
 
-## 0.1.0 — 2026-10-05 · first public release
+## 0.2.0 — 2026-10-05 · Homebrew is now Brewery
+
+The name clashed with the macOS package manager, so the project is now **Brewery**.
+
+- Package `brewery-ai`, command `brewery`, module `brewery_ai`, repo `empero-org/brewery-ai` (old links redirect).
+- Existing setups keep working: `~/.config/homebrew-ai` is moved to `~/.config/brewery-ai`, projects with a
+  `homebrew.yaml` / `.homebrew/` are renamed on first open, `HOMEBREW_AI_*` environment variables are still read, an
+  existing `~/.ssh/homebrew_ed25519` key is still used, and jobs started before the update are still recognised.
+- Model cards now say "Brewed with Brewery" and carry the `brewery-ai` tag.
+- Docs: `max_seq_len` in the model guidelines is shown as sized from your data (2048 is only the fallback).
+- Uploads to an organisation now write the final repo id into the model card's usage code.
+
+## 0.1.0 — 2026-10-05 · first public release (as Homebrew)
 
 **The brewmaster**
 - Guided agent REPL with four experience levels (Beginner, Hobbyist, Builder, Expert), a phase-based workflow
@@ -37,5 +49,5 @@
 
 **Safety**
 - Everything that costs money, installs software, sends data elsewhere or publishes asks for confirmation inside
-  Homebrew. SSH commands are parsed with an allow-list (no local command execution through ssh options); the HF
+  Brewery. SSH commands are parsed with an allow-list (no local command execution through ssh options); the HF
   token only goes to a server when a model needs it; secrets never pass through the chat.

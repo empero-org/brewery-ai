@@ -1,0 +1,102 @@
+family: llama3
+display_name: Llama 3.x
+vendor: Meta
+modality: text
+summary: >-
+  Meta's Llama 3.1 / 3.2 / 3.3 text models. Very widely supported by tools and
+  runtimes. Repos are gated: accept Meta's license on Hugging Face first.
+license:
+  id: llama3.1
+  name: Llama 3.1 Community License
+  url: https://github.com/meta-llama/llama-models/blob/main/models/llama3_1/LICENSE
+  hub_id: llama3.1
+  name_prefix: Llama
+  attribution: Built with Llama
+  notice: "Llama 3.1 is licensed under the Llama 3.1 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved."
+  copy_files: [LICENSE, USE_POLICY.md]
+requirements:
+  transformers: ">=4.43"
+loading:
+  auto_class: causal_lm
+  attn_implementation: sdpa
+  pad_token: "<|finetune_right_pad_id|>"
+chat_format:
+  assistant_header: "<|start_header_id|>assistant<|end_header_id|>\n\n"
+  turn_end: ["<|eot_id|>", "<|eom_id|>"]
+  reasoning: inline
+  tools: native
+  tool_args: dict
+  max_tool_calls_per_turn: 1
+  # The 3.2 template stamps today's date into every system block; pin it so the
+  # training data does not change from day to day (3.1/3.3 default to this date).
+  template_kwargs: {date_string: "26 Jul 2024"}
+  document_end: "<|end_of_text|>"
+  document_bos: true
+stop_tokens: ["<|eot_id|>", "<|eom_id|>", "<|end_of_text|>"]
+lora_targets:
+  default: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+  attention: [q_proj, k_proj, v_proj, o_proj]
+  mlp: [gate_proj, up_proj, down_proj]
+sampling:
+  default: {temperature: 0.6, top_p: 0.9}
+notes:
+  - "License: a published fine-tune must have a name starting with 'Llama', show 'Built with Llama', and ship a copy of the license. Brewery's packager handles all three."
+  - "Llama has no native reasoning format: reasoning traces are taught as inline <think>...</think> blocks (or dropped, if you prefer)."
+  - "The Llama chat template allows one tool call per assistant turn; traces with parallel calls are skipped."
+  - "Base (non-instruct) models have untrained chat-control tokens. Brewery initialises them to the mean embedding before training."
+variants:
+  - id: meta-llama/Llama-3.2-1B-Instruct
+    label: Llama 3.2 1B Instruct
+    params_b: 1.236
+    layers: 16
+    hidden: 2048
+    intermediate: 8192
+    heads: 32
+    kv_heads: 8
+    head_dim: 64
+    vocab: 128256
+    context: 131072
+    tied_embeddings: true
+    gated: true
+    recommended: true
+    license: &llama32
+      id: llama3.2
+      name: Llama 3.2 Community License
+      url: https://github.com/meta-llama/llama-models/blob/main/models/llama3_2/LICENSE
+      hub_id: llama3.2
+      name_prefix: Llama
+      attribution: Built with Llama
+      notice: "Llama 3.2 is licensed under the Llama 3.2 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved."
+      copy_files: [LICENSE.txt, USE_POLICY.md]
+  - {id: meta-llama/Llama-3.2-3B-Instruct, label: Llama 3.2 3B Instruct, params_b: 3.213, layers: 28, hidden: 3072, intermediate: 8192, heads: 24, kv_heads: 8, head_dim: 128, vocab: 128256, context: 131072, tied_embeddings: true, gated: true, recommended: true, license: *llama32}
+  - {id: meta-llama/Llama-3.1-8B-Instruct, label: Llama 3.1 8B Instruct, params_b: 8.03, layers: 32, hidden: 4096, intermediate: 14336, heads: 32, kv_heads: 8, head_dim: 128, vocab: 128256, context: 131072, gated: true, recommended: true}
+  - {id: meta-llama/Llama-3.1-70B-Instruct, label: Llama 3.1 70B Instruct, params_b: 70.55, layers: 80, hidden: 8192, intermediate: 28672, heads: 64, kv_heads: 8, head_dim: 128, vocab: 128256, context: 131072, gated: true,
+     guidelines: {full: {allowed: false, notes: ["Full fine-tuning a 70B model needs a multi-GPU cluster; use QLoRA."]}}}
+  - id: meta-llama/Llama-3.3-70B-Instruct
+    label: Llama 3.3 70B Instruct
+    params_b: 70.55
+    layers: 80
+    hidden: 8192
+    intermediate: 28672
+    heads: 64
+    kv_heads: 8
+    head_dim: 128
+    vocab: 128256
+    context: 131072
+    gated: true
+    guidelines: {full: {allowed: false}}
+    license:
+      id: llama3.3
+      name: Llama 3.3 Community License
+      url: https://github.com/meta-llama/llama-models/blob/main/models/llama3_3/LICENSE
+      hub_id: llama3.3
+      name_prefix: Llama
+      attribution: Built with Llama
+      notice: "Llama 3.3 is licensed under the Llama 3.3 Community License, Copyright © Meta Platforms, Inc. All Rights Reserved."
+      copy_files: [LICENSE, USE_POLICY.md]
+  - {id: meta-llama/Llama-3.2-1B, label: Llama 3.2 1B (base), kind: base, params_b: 1.236, layers: 16, hidden: 2048, intermediate: 8192, heads: 32, kv_heads: 8, head_dim: 64, vocab: 128256, context: 131072, tied_embeddings: true, gated: true,
+     license: *llama32, chat_template_from: meta-llama/Llama-3.2-1B-Instruct, fix_untrained_tokens: true}
+  - {id: meta-llama/Llama-3.2-3B, label: Llama 3.2 3B (base), kind: base, params_b: 3.213, layers: 28, hidden: 3072, intermediate: 8192, heads: 24, kv_heads: 8, head_dim: 128, vocab: 128256, context: 131072, tied_embeddings: true, gated: true,
+     license: *llama32, chat_template_from: meta-llama/Llama-3.2-3B-Instruct, fix_untrained_tokens: true}
+  - {id: meta-llama/Llama-3.1-8B, label: Llama 3.1 8B (base), kind: base, params_b: 8.03, layers: 32, hidden: 4096, intermediate: 14336, heads: 32, kv_heads: 8, head_dim: 128, vocab: 128256, context: 131072, gated: true,
+     chat_template_from: meta-llama/Llama-3.1-8B-Instruct, fix_untrained_tokens: true}

@@ -1,0 +1,62 @@
+family: qwen3_5_moe
+display_name: Qwen3.5 MoE
+vendor: Alibaba Qwen
+modality: text
+summary: >-
+  Sparse mixture-of-experts Qwen3.5 (35B total, ~3.5B active per token). Fast inference
+  for its quality, but every expert has to sit in GPU memory while training.
+license:
+  id: apache-2.0
+  name: Apache License 2.0
+  url: https://www.apache.org/licenses/LICENSE-2.0
+  hub_id: apache-2.0
+requirements:
+  transformers: ">=5.2"
+  packages: ["flash-linear-attention>=0.4.2"]
+loading:
+  auto_class: causal_lm
+  attn_implementation: sdpa
+chat_format:
+  assistant_header: "<|im_start|>assistant\n"
+  turn_end: ["<|im_end|>"]
+  reasoning: native
+  reasoning_field: reasoning_content
+  tools: native
+  tool_args: dict
+  empty_think: "<think>\n\n</think>\n\n"
+  thinking_flag: enable_thinking
+  document_end: "<|endoftext|>"
+stop_tokens: ["<|im_end|>", "<|endoftext|>"]
+lora_targets:
+  # Experts are fused 3-D parameters in transformers v5, so these names only hit
+  # attention, the linear-attention projections and the always-on shared expert.
+  default: [q_proj, k_proj, v_proj, o_proj, in_proj_qkv, in_proj_z, out_proj, gate_proj, up_proj, down_proj]
+  attention: [q_proj, k_proj, v_proj, o_proj, in_proj_qkv, in_proj_z, out_proj]
+sampling:
+  default: {temperature: 0.7, top_p: 0.8, top_k: 20}
+  thinking: {temperature: 1.0, top_p: 0.95, top_k: 20}
+pipeline:
+  expert_parameters: ["mlp.experts.gate_up_proj", "mlp.experts.down_proj"]
+guidelines:
+  lora:
+    rank: {choices: [4, 8, 16, 32, 64], default: 16, recommended: [8, 32]}
+  qlora:
+    allowed: false
+    notes: ["bitsandbytes cannot quantize the fused expert tensors, so QLoRA saves almost nothing on MoE models. Use bf16 LoRA on an 80 GB+ GPU."]
+  full:
+    allowed: false
+    notes: ["Full fine-tuning a 35B MoE needs hundreds of GB of GPU memory; use LoRA."]
+notes:
+  - "LoRA trains attention, the Gated DeltaNet projections and the shared expert; the router and the 256 routed experts stay frozen (the stable, recommended setup)."
+  - "Expert LoRA (PEFT target_parameters) is available as an expert option but is experimental and multiplies memory use."
+  - "Needs a single GPU with at least 80 GB (A100/H100 80GB, H200, B200, RTX PRO 6000 96GB): all 35B weights are loaded in bf16."
+  - "Brewery trains the text model only; exports are text-only checkpoints without the vision encoder and MTP head."
+variants:
+  - {id: Qwen/Qwen3.5-35B-A3B, label: Qwen3.5 35B-A3B, params_b: 34.66, active_params_b: 3.46, layers: 40, linear_attention_layers: 30, hidden: 2048, intermediate: 512, heads: 16, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144,
+     experts: 256, experts_per_token: 8, expert_intermediate: 512, recommended: true}
+  - {id: Qwen/Qwen3.6-35B-A3B, label: Qwen3.6 35B-A3B, params_b: 34.66, active_params_b: 3.46, layers: 40, linear_attention_layers: 30, hidden: 2048, intermediate: 512, heads: 16, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144,
+     experts: 256, experts_per_token: 8, expert_intermediate: 512, notes: ["Same architecture as Qwen3.5-35B-A3B with a newer checkpoint."]}
+  - {id: Qwen/Qwen3.5-35B-A3B-Base, label: Qwen3.5 35B-A3B Base, kind: base, params_b: 34.66, active_params_b: 3.46, layers: 40, linear_attention_layers: 30, hidden: 2048, intermediate: 512, heads: 16, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144,
+     experts: 256, experts_per_token: 8, expert_intermediate: 512}
+  - {id: empero-ai/Qwen3.8-35B-A3B-Distill, label: Empero Qwen3.8 35B-A3B Distill, publisher: Empero, params_b: 34.66, active_params_b: 3.46, layers: 40, linear_attention_layers: 30, hidden: 2048, intermediate: 512, heads: 16, kv_heads: 2, head_dim: 256, vocab: 248320, context: 262144,
+     experts: 256, experts_per_token: 8, expert_intermediate: 512, notes: ["Empero's reasoning distill on the Qwen3.6-35B-A3B architecture."]}
