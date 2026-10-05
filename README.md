@@ -86,6 +86,52 @@ pip install "brewery-ai[train] @ git+https://github.com/empero-org/brewery-ai"
 
 Close the terminal at any time: training keeps running, and `brewery` in the project folder picks up where you left off.
 
+### Windows AMD GPUs (ROCm)
+
+When `rocm-smi` is absent, Brewery reads GPU data from PyTorch. Local GPU training requires a successful PyTorch GPU operation check.
+CPU test runs remain available without a GPU.
+
+The following setup completed a two-step text LoRA run on Windows 11 with an AMD Radeon RX 7900 XT:
+
+| Package | Tested version |
+|---|---|
+| Python | 3.12 |
+| PyTorch | `2.9.1+rocmsdk20260116` |
+| Transformers | `5.10.1` |
+| Accelerate | `1.13.0` |
+| PEFT | `0.21.2` |
+
+1. Install the AMD ROCm PyTorch build for Python 3.12 through the [AMD ROCm 7.2 Windows instructions](https://rocm.docs.amd.com/projects/radeon-ryzen/en/docs-7.2/docs/install/installryz/windows/install-pytorch.html).
+   If this build already exists in your Python 3.12 environment, keep that installation.
+2. Open PowerShell in this repository. Set `$python` to the Python 3.12 executable with that ROCm build.
+3. Create the environment and install Brewery:
+
+   ```powershell
+   $python = 'C:\path\to\Python312\python.exe' # Replace this path with your Python 3.12 executable.
+   $environment = '.venv'
+   $venvArgs = @('-m', 'venv', '--system-site-packages', $environment)
+   & $python @venvArgs
+   $python = (Resolve-Path '.venv\Scripts\python.exe').Path
+   $env:PIP_CONSTRAINT = (Resolve-Path 'constraints-windows-rocm.txt').Path
+   $installArgs = @('-m', 'pip', 'install', '-e', '.[dev]')
+   & $python @installArgs
+   ```
+
+   The [constraints file](constraints-windows-rocm.txt) preserves the AMD PyTorch build and selects the tested training packages.
+   Newer Transformers and Accelerate versions can require a distributed module absent from this PyTorch build.
+   Keep `PIP_CONSTRAINT` set while Brewery runs. Brewery package installation commands also use this variable.
+   If the AMD PyTorch build is missing, installation stops with a constraint error.
+
+4. Run the hardware check and start Brewery:
+
+   ```powershell
+   $brewery = (Resolve-Path '.venv\Scripts\brewery.exe').Path
+   & $brewery hardware
+   & $brewery
+   ```
+
+Use text LoRA with `adamw_torch` for this setup. QLoRA, image training, and multiple GPUs require separate validation.
+
 ## How a brew works
 
 | Phase | What happens |
@@ -200,8 +246,13 @@ my-pirate-bot/
   .brewery/           conversation history (to resume)
 ```
 
-User settings live in `~/.config/brewery-ai/` (`settings.yaml`, `credentials.yaml` with mode 600). Extra model
-profiles can be dropped into `~/.config/brewery-ai/profiles/` (same schema as the shipped ones).
+Project-relative paths use forward slashes in saved state. Absolute paths refer to files on the current computer.
+Quote paths with spaces in commands entered by hand. Local expert commands use the Windows system shell and Bash or `sh` on POSIX systems.
+SSH worker commands use Bash and POSIX paths on the server.
+
+User settings live in `%APPDATA%/brewery-ai/` on Windows. When `XDG_CONFIG_HOME` is set, POSIX systems use `$XDG_CONFIG_HOME/brewery-ai/`.
+Otherwise, POSIX settings live in `~/.config/brewery-ai/`. This folder contains `settings.yaml` and `credentials.yaml`.
+On POSIX systems, `credentials.yaml` uses mode 600. Extra model profiles go in the `profiles/` subfolder (same schema as the shipped profiles).
 
 ## Documentation
 

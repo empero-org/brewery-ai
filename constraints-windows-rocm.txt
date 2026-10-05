@@ -1,0 +1,7 @@
+# Tested single-GPU text LoRA setup for native Windows and AMD ROCm.
+# Install AMD's PyTorch build before applying these constraints.
+# The local version suffix prevents replacement with a standard PyPI build.
+torch==2.9.1+rocmsdk20260116
+transformers==5.10.1
+accelerate==1.13.0
+peft==0.21.2

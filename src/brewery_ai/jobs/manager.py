@@ -131,7 +131,7 @@ class JobManager:
             cmd = [sys.executable, "-m", "brewery_ai", *verb]
             if nproc > 1:
                 cmd = [sys.executable, "-m", "torch.distributed.run", f"--nproc_per_node={nproc}", "-m", "brewery_ai", *verb]
-            env = dict(os.environ, PYTHONUNBUFFERED="1")
+            env = dict(os.environ, PYTHONUNBUFFERED="1", PYTHONUTF8="1")
             if hf_token:
                 env["HF_TOKEN"] = hf_token
             log = open(runs / log_name, "ab")
@@ -279,7 +279,7 @@ class JobManager:
             return []
         script = "; ".join(f"[ -d {shlex.quote(root + '/runs/' + jid)} ] && echo {shlex.quote(jid)}" for jid in ids) + "; true"
         res = target.run(script, timeout=60)
-        found = set(res.stdout.split()) if res.ok else set()
+        found = set(res.stdout.splitlines()) if res.ok else set()
         spec = target.to_dict()
         moved = []
         for j in self.project.state.jobs:
@@ -331,10 +331,11 @@ class JobManager:
             cmd = f"cd {shlex.quote(record['remote_run_dir'])} && {secret}{prefix} " + " ".join(shlex.quote(a) for a in args)
             res = target.run(cmd, input=(stdin or "") + "\n", timeout=timeout)
         else:
-            env = dict(os.environ)
+            env = dict(os.environ, PYTHONUTF8="1")
             if stdin:
                 env["HF_TOKEN"] = stdin
-            proc = subprocess.run([sys.executable, "-m", "brewery_ai", *args], cwd=record["run_dir"], capture_output=True, text=True, timeout=timeout, env=env)
+            proc = subprocess.run([sys.executable, "-m", "brewery_ai", *args], cwd=record["run_dir"], capture_output=True,
+                                  text=True, encoding="utf-8", errors="replace", timeout=timeout, env=env)
             res = type("R", (), {"ok": proc.returncode == 0, "stdout": proc.stdout, "stderr": proc.stderr, "code": proc.returncode})()
         if not res.ok:
             tail = (res.stderr or res.stdout).strip().splitlines()[-20:]

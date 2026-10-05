@@ -7,8 +7,9 @@ import re
 import shlex
 import shutil
 import subprocess
+import sys
 from dataclasses import dataclass, field
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 DEFAULT_KEY = Path.home() / ".ssh" / "brewery_ed25519"
 if not DEFAULT_KEY.exists() and (Path.home() / ".ssh" / "homebrew_ed25519").exists():
@@ -75,7 +76,9 @@ def check_option(option: str) -> str:
     if key.lower() == "stricthostkeychecking":
         ok = value.lower() in ("yes", "no", "accept-new", "ask", "off")
     elif key.lower() == "userknownhostsfile":
-        ok = value == "/dev/null" or os.path.expanduser(value).startswith(str(Path.home() / ".ssh") + os.sep)
+        if len(value) >= 2 and value[0] in ("'", '"') and value[-1] == value[0]:
+            value = value[1:-1]
+        ok = value == "/dev/null" or Path(value).expanduser().resolve().is_relative_to((Path.home() / ".ssh").resolve())
     else:
         ok = re.fullmatch(rule, value) is not None
     if not ok:
@@ -110,10 +113,16 @@ def parse_ssh_command(text: str) -> SSHSpec:
     if not text:
         raise SSHParseError("empty SSH command")
     try:
-        tokens = shlex.split(text)
+        lexer = shlex.shlex(text, posix=True)
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        if sys.platform == "win32":
+            lexer.escape = ""  # Backslashes are path separators in Windows shell input.
+        tokens = list(lexer)
     except ValueError as exc:
         raise SSHParseError(f"could not read the command: {exc}") from exc
-    if tokens and tokens[0] in ("ssh", "ssh.exe"):
+    path_type = PureWindowsPath if sys.platform == "win32" else PurePosixPath
+    if tokens and path_type(tokens[0]).name.lower() in ("ssh", "ssh.exe"):
         tokens = tokens[1:]
     user = None
     port = 22

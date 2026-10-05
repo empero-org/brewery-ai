@@ -20,8 +20,11 @@ def hf_token() -> str | None:
 
 def device_info() -> dict[str, Any]:
     if torch.cuda.is_available():
-        caps = [torch.cuda.get_device_capability(i) for i in range(torch.cuda.device_count())]
-        return {"device": "cuda", "count": torch.cuda.device_count(), "bf16": all(c[0] >= 8 for c in caps)}
+        bf16 = []
+        for i in range(torch.cuda.device_count()):
+            with torch.cuda.device(i):
+                bf16.append(torch.cuda.is_bf16_supported(including_emulation=False))
+        return {"device": "cuda", "count": torch.cuda.device_count(), "bf16": all(bf16)}
     if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
         return {"device": "mps", "count": 1, "bf16": False}
     return {"device": "cpu", "count": 0, "bf16": False}
@@ -36,7 +39,7 @@ def resolve_precision(requested: str, model_info: Any) -> str:
             return "bf16"
         if model_info.profile.loading.get("bf16_required"):
             raise RuntimeError(
-                f"{model_info.profile.display_name} needs a GPU with bf16 support (Ampere or newer); "
+                f"{model_info.profile.display_name} needs a GPU with bf16 support; "
                 "this GPU only has fp16, where the model's activations overflow."
             )
         return "fp16"

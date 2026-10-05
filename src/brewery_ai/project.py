@@ -89,7 +89,7 @@ class Project:
 
     @classmethod
     def create(cls, root: str | Path, name: str | None = None) -> "Project":
-        root = Path(root).resolve()
+        root = Path(root).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
         if (root / PROJECT_FILE).exists():
             return cls.load(root)
@@ -101,7 +101,7 @@ class Project:
 
     @classmethod
     def load(cls, root: str | Path) -> "Project":
-        root = Path(root).resolve()
+        root = Path(root).expanduser().resolve()
         migrate_project(root)
         data = yaml.safe_load((root / PROJECT_FILE).read_text(encoding="utf-8")) or {}
         return cls(root, ProjectState.model_validate(data))
@@ -134,13 +134,14 @@ class Project:
         return path
 
     def rel(self, path: str | Path) -> str:
+        path = Path(path).expanduser().resolve()
         try:
-            return str(Path(path).resolve().relative_to(self.root))
+            return path.relative_to(self.root).as_posix()
         except ValueError:
             return str(path)
 
     def abs(self, path: str | Path) -> Path:
-        p = Path(path)
+        p = Path(path).expanduser()
         return p if p.is_absolute() else self.root / p
 
     # -- helpers -------------------------------------------------------------
