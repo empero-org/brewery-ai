@@ -12,6 +12,7 @@ from typing import Any
 from homebrew_ai.agent.tools.base import ToolContext, ToolError, tool
 from homebrew_ai.etf.io import iter_records, read_records, write_records
 from homebrew_ai.etf.schema import content_text, normalize_record
+from homebrew_ai.hardware.probe import gpu_runtime_error
 from homebrew_ai.hardware.estimate import TrainShape, estimate_hours, fitting_gpus
 from homebrew_ai.hardware.gpus import PRICES_CHECKED, generic, identify
 from homebrew_ai.jobs.manager import active_job
@@ -286,6 +287,11 @@ def start_training(ctx: ToolContext, args: dict[str, Any]) -> Any:
                 "Run prepare_server again (quick: what is installed stays)."
             )
     if compute.kind == "local":
+        gpu_error = gpu_runtime_error(compute.hardware)
+        if gpu_error:
+            compute.prepared = False
+            ctx.project.save()
+            raise ToolError(f"GPU training is not ready: {gpu_error}. Fix the GPU runtime, then run detect_hardware and use_local_computer.")
         missing = bootstrap.check_local_worker(needed)["missing"]
         if missing:
             raise ToolError(f"training packages missing on this computer: {', '.join(missing)} (install_local_training_packages)")

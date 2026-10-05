@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from homebrew_ai.remote.sshutil import SSHSpec, validate_spec
+from homebrew_ai.remote.sshutil import SSHSpec, check_option, validate_spec
 
 
 @dataclass
@@ -44,6 +44,18 @@ def _tar_filter_kwargs() -> dict:
     return {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
 
 
+def _local_shell(cmd: str) -> str | list[str]:
+    if sys.platform == "win32":
+        return cmd  # subprocess uses the Windows system shell, without an extra shell dependency.
+    shell = shutil.which("bash")
+    if shell:
+        return [shell, "-lc", cmd]
+    shell = shutil.which("sh")
+    if not shell:
+        raise RuntimeError("Local shell commands require Bash or sh.")
+    return [shell, "-c", cmd]
+
+
 class LocalTarget:
     kind = "local"
 
@@ -51,13 +63,18 @@ class LocalTarget:
         self.label = label
 
     def run(self, cmd: str, *, timeout: float | None = 600, input: str | None = None) -> RunResult:
-        shell = ["bash", "-lc", cmd] if shutil.which("bash") else cmd
-        proc = subprocess.run(shell, shell=isinstance(shell, str), capture_output=True, text=True, timeout=timeout, input=input)
+        shell = _local_shell(cmd)
+        proc = subprocess.run(shell, shell=isinstance(shell, str), capture_output=True, text=True, encoding="utf-8", errors="replace",
+                              timeout=timeout, input=input, env=dict(os.environ, PYTHONUTF8="1"),
+                              creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         return RunResult(proc.returncode, proc.stdout, proc.stderr)
 
     def stream(self, cmd: str, on_line: Callable[[str], None], *, input: str | None = None) -> int:
-        shell = ["bash", "-lc", cmd] if shutil.which("bash") else cmd
-        proc = subprocess.Popen(shell, shell=isinstance(shell, str), stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE if input else None, text=True)
+        shell = _local_shell(cmd)
+        proc = subprocess.Popen(shell, shell=isinstance(shell, str), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                stdin=subprocess.PIPE if input else None, text=True, encoding="utf-8", errors="replace",
+                                env=dict(os.environ, PYTHONUTF8="1"),
+                                creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0)
         if input and proc.stdin:
             proc.stdin.write(input)
             proc.stdin.close()
@@ -107,6 +124,12 @@ class SSHTarget:
         if self.spec.key:
             args += ["-i", os.path.expanduser(self.spec.key), "-o", "IdentitiesOnly=yes"]
         for opt in self.spec.options:
+            opt = check_option(opt)
+            key, _, value = opt.partition("=")
+            if key.lower() == "userknownhostsfile":
+                value = Path(value).expanduser().as_posix() if value != "/dev/null" else value
+                value = value.replace("\\", "\\\\").replace('"', '\\"')
+                opt = f'{key}="{value}"'
             args += ["-o", opt]
         args.append(f"{self.spec.user}@{self.spec.host}")
         return args
@@ -116,14 +139,16 @@ class SSHTarget:
 
     def run(self, cmd: str, *, timeout: float | None = 600, input: str | None = None) -> RunResult:
         try:
-            proc = subprocess.run(self._base() + [self._wrap(cmd)], capture_output=True, text=True, timeout=timeout, input=input)
+            proc = subprocess.run(self._base() + [self._wrap(cmd)], capture_output=True, text=True, encoding="utf-8",
+                                  errors="replace", timeout=timeout, input=input)
         except subprocess.TimeoutExpired:
             return RunResult(124, "", f"timed out after {timeout}s")
         return RunResult(proc.returncode, proc.stdout, proc.stderr)
 
     def stream(self, cmd: str, on_line: Callable[[str], None], *, input: str | None = None) -> int:
         proc = subprocess.Popen(
-            self._base() + [self._wrap(cmd)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE, text=True
+            self._base() + [self._wrap(cmd)], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, stdin=subprocess.PIPE,
+            text=True, encoding="utf-8", errors="replace"
         )
         assert proc.stdin is not None and proc.stdout is not None
         if input:
@@ -139,7 +164,7 @@ class SSHTarget:
         dest = remote.rstrip("/")
         parent = dest.rsplit("/", 1)[0] if "/" in dest else "."
         name = dest.rsplit("/", 1)[-1]
-        cmd = f"mkdir -p {_q(parent)} && tar xzf - -C {_q(parent)}"
+        cmd = f"mkdir -p -- {_q(parent)} && tar xzf - -C {_q(parent)}"
         proc = subprocess.Popen(self._base() + [self._wrap(cmd)], stdin=subprocess.PIPE, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         assert proc.stdin is not None and proc.stderr is not None
         err, drain = _drain(proc.stderr)
@@ -166,7 +191,7 @@ class SSHTarget:
         src = remote.rstrip("/")
         parent = src.rsplit("/", 1)[0] if "/" in src else "."
         name = src.rsplit("/", 1)[-1]
-        cmd = f"tar czf - -C {_q(parent)} {_q(name)}"
+        cmd = f"tar czf - -C {_q(parent)} -- {_q(name)}"
         local.parent.mkdir(parents=True, exist_ok=True)
         staging = local.parent / f".incoming-{name}-{os.getpid()}-{threading.get_ident()}"
         if staging.exists():

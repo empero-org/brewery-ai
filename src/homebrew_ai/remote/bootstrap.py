@@ -78,7 +78,7 @@ def remote_root(target: SSHTarget) -> str:
 
 def probe_remote(target: SSHTarget, with_torch: bool = True, path: str = ".", python: str = "python3") -> dict[str, Any]:
     flags = " --torch" if with_torch else ""
-    res = target.run(f"{python} - --path {shlex.quote(path)}{flags}", input=probe_source(), timeout=180)
+    res = target.run(f"{shlex.quote(python)} - --path {shlex.quote(path)}{flags}", input=probe_source(), timeout=180)
     res.raise_for_error("hardware probe")
     return json.loads(res.stdout.strip().splitlines()[-1])
 
@@ -91,9 +91,9 @@ def package_hash() -> str:
     """Fingerprint of the worker code, so each version gets its own folder on the server."""
     h = hashlib.sha256()
     base = package_dir()
-    for path in sorted(base.rglob("*")):
+    for path in sorted(base.rglob("*"), key=lambda p: p.relative_to(base).as_posix()):
         if path.is_file() and "__pycache__" not in path.parts and path.suffix not in (".pyc", ".pyo"):
-            h.update(str(path.relative_to(base)).encode() + b"\0" + path.read_bytes())
+            h.update(path.relative_to(base).as_posix().encode("utf-8") + b"\0" + path.read_bytes())
     return h.hexdigest()[:12]
 
 

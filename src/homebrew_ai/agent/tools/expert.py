@@ -12,7 +12,8 @@ from homebrew_ai.remote.target import LocalTarget, SSHTarget
 @tool(
     "run_shell",
     """Run a shell command on this computer or the connected server, for debugging (expert level only; the user confirms
-every command). Prefer the dedicated tools for anything they cover.""",
+every command). Prefer the dedicated tools for anything they cover. Local commands use the system shell on Windows
+and Bash or sh on POSIX systems. Remote commands use Bash.""",
     {"command": {"type": "string"}, "where": {"type": "string", "enum": ["local", "remote"]}, "timeout_s": {"type": "integer"}},
     ["command", "where"],
     levels=("expert",),

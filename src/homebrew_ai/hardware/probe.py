@@ -165,27 +165,56 @@ def torch_info(timeout=90, python=None):
         "d = {'installed': True, 'version': torch.__version__, 'cuda': torch.version.cuda,\n"
         "     'hip': getattr(torch.version, 'hip', None), 'cuda_available': torch.cuda.is_available(),\n"
         "     'device_count': torch.cuda.device_count() if torch.cuda.is_available() else 0,\n"
-        "     'mps': bool(getattr(torch.backends, 'mps', None) and torch.backends.mps.is_available())}\n"
+        "     'mps': bool(getattr(torch.backends, 'mps', None) and torch.backends.mps.is_available()), 'devices': []}\n"
         "if d['cuda_available']:\n"
         "    caps = [torch.cuda.get_device_capability(i) for i in range(d['device_count'])]\n"
         "    d['capabilities'] = ['%d.%d' % c for c in caps]\n"
-        "    d['bf16'] = all(c[0] >= 8 for c in caps)\n"
+        "    for i in range(d['device_count']):\n"
+        "        p = torch.cuda.get_device_properties(i)\n"
+        "        with torch.cuda.device(i):\n"
+        "            bf16 = torch.cuda.is_bf16_supported(including_emulation=False)\n"
+        "        try:\n"
+        "            free, _ = torch.cuda.mem_get_info(i)\n"
+        "        except (RuntimeError, OSError):\n"
+        "            free = None\n"
+        "        arch = getattr(p, 'gcnArchName', None) if d['hip'] else d['capabilities'][i]\n"
+        "        d['devices'].append({'index': i, 'vendor': 'amd' if d['hip'] else 'nvidia',\n"
+        "            'backend': 'rocm' if d['hip'] else 'cuda', 'name': p.name,\n"
+        "            'vram_gb': round(p.total_memory / 1024**3, 1),\n"
+        "            'vram_free_gb': round(free / 1024**3, 1) if free is not None else None,\n"
+        "            'driver': None, 'compute_capability': arch, 'bf16': bf16})\n"
+        "    d['bf16'] = all(g['bf16'] for g in d['devices'])\n"
         "    try:\n"
-        "        torch.zeros(1, device='cuda'); d['cuda_works'] = True\n"
+        "        for i in range(d['device_count']):\n"
+        "            check = torch.zeros(1, device=f'cuda:{i}')\n"
+        "            torch.cuda.synchronize(i)\n"
+        "        d['cuda_works'] = True\n"
         "    except Exception as e:\n"
         "        d['cuda_works'] = False; d['cuda_error'] = str(e)[:300]\n"
-        "print(json.dumps(d))\n"
+        "print(json.dumps(d), flush=True)\n"
     )
     try:
         out = subprocess.run([python or sys.executable, "-c", code], capture_output=True, text=True, timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        # A Windows ROCm process can report successfully before hanging during shutdown.
+        # Keep its completed report instead of incorrectly claiming PyTorch is absent.
+        report = _torch_output(exc.stdout)
+        report["error"] = f"PyTorch probe timed out after {timeout}s"
+        return report
     except (OSError, subprocess.SubprocessError) as exc:
         return {"installed": False, "error": str(exc)[:200]}
     if out.returncode != 0:
         err = (out.stderr or "").strip().splitlines()
         missing = any("No module named 'torch'" in line for line in err)
         return {"installed": not missing, "error": (err[-1] if err else "torch import failed")[:300]}
+    return _torch_output(out.stdout)
+
+
+def _torch_output(stdout):
+    if isinstance(stdout, bytes):
+        stdout = stdout.decode("utf-8", errors="replace")
     try:
-        return json.loads(out.stdout.strip().splitlines()[-1])
+        return json.loads((stdout or "").strip().splitlines()[-1])
     except (ValueError, IndexError):
         return {"installed": True, "error": "could not parse torch probe output"}
 
@@ -258,7 +287,20 @@ def probe(with_torch=False, path="."):
         report["torch"] = torch_info(python=py) if py else {"installed": False, "error": "no Python with PyTorch found"}
         if py:
             report["torch"]["python"] = py
+        if not gpus:
+            # Native Windows ROCm does not need (or normally ship) rocm-smi.
+            report["gpus"] = report["torch"].get("devices", [])
     return report
+
+
+def gpu_runtime_error(report):
+    """Return the reason a detected GPU is not ready for training."""
+    if not report or not report.get("gpus"):
+        return None  # CPU training does not need a GPU operation check.
+    torch = report.get("torch") or {}
+    if torch.get("cuda_works") is True:
+        return None
+    return torch.get("cuda_error") or torch.get("error") or "PyTorch GPU operation check did not succeed"
 
 
 def main(argv=None):

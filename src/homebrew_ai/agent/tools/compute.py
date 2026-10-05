@@ -26,9 +26,11 @@ def summarize_hardware(report: dict[str, Any]) -> dict[str, Any]:
         gpus.append(
             {
                 "name": g.get("name"),
+                "vendor": g.get("vendor"),
+                "backend": g.get("backend"),
                 "vram_gb": g.get("vram_gb"),
                 "free_gb": g.get("vram_free_gb"),
-                "bf16": known.bf16 if known else None,
+                "bf16": g.get("bf16", known.bf16 if known else None),
                 "catalog": known.key if known else None,
             }
         )
@@ -45,9 +47,11 @@ def summarize_hardware(report: dict[str, Any]) -> dict[str, Any]:
         "container": report.get("container"),
     }
     if torch:
-        out["torch"] = {k: torch.get(k) for k in ("installed", "version", "cuda_available", "bf16", "error") if k in torch}
+        out["torch"] = {k: torch.get(k) for k in ("installed", "version", "hip", "cuda_available", "cuda_works", "cuda_error", "bf16", "error") if k in torch}
     if not gpus:
         out["verdict"] = "no NVIDIA/AMD GPU found: training here is not practical (tiny test models only); rent a GPU server"
+    elif error := hw_probe.gpu_runtime_error(report):
+        out["verdict"] = f"GPU training not ready: {error}"
     else:
         best = max(g["vram_gb"] or 0 for g in gpus)
         out["verdict"] = f"usable GPU with {best} GB" if best >= 8 else f"GPU has only {best} GB: only very small models"
@@ -86,7 +90,7 @@ def bootstrap_spec(data: dict[str, Any]):
 @tool(
     "use_local_computer",
     """Choose this computer for training. Checks the GPU and which training packages (PyTorch, transformers, peft, ...)
-are missing. Only sensible with an NVIDIA GPU (8 GB+) or for tiny test runs.""",
+are missing. Use an NVIDIA (CUDA) or AMD (ROCm) GPU with 8 GB+, or tiny CPU test runs.""",
     activity="Checking this computer",
 )
 def use_local_computer(ctx: ToolContext, args: dict[str, Any]) -> Any:
@@ -102,9 +106,11 @@ def use_local_computer(ctx: ToolContext, args: dict[str, Any]) -> Any:
         info = get_model(model_id)
         reqs = bootstrap.worker_requirements(info, "lora")
     check = bootstrap.check_local_worker(reqs)
-    compute.prepared = not check["missing"]
+    gpu_error = hw_probe.gpu_runtime_error(report)
+    compute.prepared = not check["missing"] and gpu_error is None
     ctx.project.save()
-    return {"hardware": summarize_hardware(report), "missing_packages": check["missing"], "install_command": check["install_command"] if check["missing"] else None}
+    return {"hardware": summarize_hardware(report), "missing_packages": check["missing"], "gpu_error": gpu_error,
+            "install_command": check["install_command"] if check["missing"] else None}
 
 
 @tool(
@@ -124,9 +130,11 @@ def install_local_training_packages(ctx: ToolContext, args: dict[str, Any]) -> A
     proc = subprocess.run(cmd, capture_output=True, text=True)
     if proc.returncode != 0:
         raise ToolError("pip install failed:\n" + "\n".join((proc.stderr or proc.stdout).strip().splitlines()[-12:]))
-    ctx.project.state.compute.prepared = True
+    gpu_error = hw_probe.gpu_runtime_error(report)
+    ctx.project.state.compute.prepared = gpu_error is None
+    ctx.cache.pop("local_hardware", None)
     ctx.project.save()
-    return {"installed": pkgs}
+    return {"installed": pkgs, "prepared": ctx.project.state.compute.prepared, "gpu_error": gpu_error}
 
 
 def _shape_from(info, method: str | None, seq_len: int | None) -> TrainShape:
