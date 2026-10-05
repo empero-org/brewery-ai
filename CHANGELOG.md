@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.2.1 — 2026-10-05
 
-Windows AMD GPUs and cross-platform paths, contributed by @tobitege (#1).
+AMD GPUs on Windows and cross-platform paths, contributed by @tobitege (#1).
 
 **Fixed**
 - Hardware detection uses ROCm PyTorch to report AMD GPUs, VRAM and BF16 support on Windows without `rocm-smi`.
@@ -14,7 +14,12 @@ Windows AMD GPUs and cross-platform paths, contributed by @tobitege (#1).
 - Local commands use the Windows system shell on Windows and Bash or `sh` on POSIX systems.
 
 **Added**
-- Windows ROCm setup instructions include tested dependency constraints that preserve the AMD PyTorch build.
+- README: setup for training on your own NVIDIA or AMD GPU, with a constraints file that keeps AMD's PyTorch
+  build on Windows.
+
+**Also fixed**
+- A fresh server without PyTorch is no longer reported as "GPU training not ready" before setup.
+- The bf16 check works with PyTorch versions before 2.3.
 
 ## 0.2.0 — 2026-10-05 · Homebrew is now Brewery
 

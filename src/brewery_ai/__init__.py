@@ -10,4 +10,4 @@ The package is split in two halves that must stay independent:
 Keep this module free of imports so both halves can load it cheaply.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
