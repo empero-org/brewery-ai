@@ -172,7 +172,10 @@ def torch_info(timeout=90, python=None):
         "    for i in range(d['device_count']):\n"
         "        p = torch.cuda.get_device_properties(i)\n"
         "        with torch.cuda.device(i):\n"
-        "            bf16 = torch.cuda.is_bf16_supported(including_emulation=False)\n"
+        "            try:\n"
+        "                bf16 = torch.cuda.is_bf16_supported(including_emulation=False)\n"
+        "            except TypeError:  # PyTorch < 2.3 has no including_emulation\n"
+        "                bf16 = torch.cuda.is_bf16_supported()\n"
         "        try:\n"
         "            free, _ = torch.cuda.mem_get_info(i)\n"
         "        except (RuntimeError, OSError):\n"
@@ -300,6 +303,8 @@ def gpu_runtime_error(report):
     torch = report.get("torch") or {}
     if torch.get("cuda_works") is True:
         return None
+    if torch.get("installed") is False:
+        return None  # nothing to check yet: installing PyTorch (or preparing the server) comes first
     return torch.get("cuda_error") or torch.get("error") or "PyTorch GPU operation check did not succeed"
 
 

@@ -23,7 +23,10 @@ def device_info() -> dict[str, Any]:
         bf16 = []
         for i in range(torch.cuda.device_count()):
             with torch.cuda.device(i):
-                bf16.append(torch.cuda.is_bf16_supported(including_emulation=False))
+                try:
+                    bf16.append(torch.cuda.is_bf16_supported(including_emulation=False))
+                except TypeError:  # PyTorch < 2.3 has no including_emulation
+                    bf16.append(torch.cuda.is_bf16_supported())
         return {"device": "cuda", "count": torch.cuda.device_count(), "bf16": all(bf16)}
     if getattr(torch.backends, "mps", None) and torch.backends.mps.is_available():
         return {"device": "mps", "count": 1, "bf16": False}

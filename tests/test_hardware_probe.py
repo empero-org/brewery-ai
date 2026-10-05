@@ -252,3 +252,28 @@ def test_detected_gpu_runs_brewery_lora_training(tmp_path, tiny_model, monkeypat
     assert status["state"] == "completed" and status["step"] >= 2
     assert devices == ["cuda:0"]  # PyTorch exposes ROCm GPUs through the cuda device API.
     assert (tmp_path / "final/adapter_model.safetensors").is_file()
+
+
+def test_a_fresh_server_without_pytorch_is_not_reported_as_broken():
+    from brewery_ai.agent.tools.compute import summarize_hardware
+
+    nvidia = {"name": "NVIDIA RTX 4090", "index": 0, "vendor": "nvidia", "vram_gb": 24.0, "vram_free_gb": 23.5, "driver": "580"}
+    report = {"gpus": [nvidia], "torch": {"installed": False, "error": "no Python with PyTorch found"}}
+    assert probe.gpu_runtime_error(report) is None
+    assert summarize_hardware(report)["verdict"] == "usable GPU with 24.0 GB"
+
+
+def test_older_pytorch_without_including_emulation(monkeypatch):
+    torch = pytest.importorskip("torch")
+    from brewery_ai.train.model import device_info
+
+    def old_api(*args, **kwargs):
+        if kwargs:
+            raise TypeError("is_bf16_supported() got an unexpected keyword argument 'including_emulation'")
+        return True
+
+    monkeypatch.setattr(torch.cuda, "is_available", lambda: True)
+    monkeypatch.setattr(torch.cuda, "device_count", lambda: 1)
+    monkeypatch.setattr(torch.cuda, "device", lambda i: contextlib.nullcontext())
+    monkeypatch.setattr(torch.cuda, "is_bf16_supported", old_api)
+    assert device_info()["bf16"] is True
