@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+**Added**
+- Optional CPU training backend: `runtime.backend: cpuforge` hands a job to the [cpuforge](https://github.com/Sm0r3s-source/cpuforge)
+  worker, a single binary with no Python or torch, so small models can be brewed overnight on a laptop or
+  home server without a GPU. Start, stop, resume, status and export work as for GPU jobs. See docs/cpuforge.md.
+
+**Changed**
+- Rendering ETF data into masked samples and loading the tokenizer moved to the torch-free `train/samples.py`
+  (still importable from `train.data` and `train.model`), so both engines train on identical tokens.
+
 ## 0.2.1 — 2026-10-05
 
 AMD GPUs on Windows and cross-platform paths, contributed by @tobitege (#1).

@@ -347,6 +347,10 @@ def run(job_path: str | Path, resume: bool = False) -> int:
             from brewery_ai.train.image import run_image
 
             outcome = run_image(job, run_dir, status, resume)
+        elif job.runtime.backend == "cpuforge":
+            from brewery_ai.train.cpuforge import run_cpuforge
+
+            outcome = run_cpuforge(job, run_dir, status, resume, stop_requested)
         else:
             outcome = run_text(job, run_dir, status, resume)
         final = {k: v for k, v in (outcome.get("metrics") or {}).items() if isinstance(v, (int, float))}
@@ -356,6 +360,8 @@ def run(job_path: str | Path, resume: bool = False) -> int:
         text = traceback.format_exc()
         print(text, file=sys.stderr, flush=True)
         kind, hint = classify_error(text)
+        if hasattr(exc, "kind") and hasattr(exc, "hint"):  # cpuforge.WorkerFailed brings its own classification
+            kind, hint = exc.kind, exc.hint
         if isinstance(exc, KeyboardInterrupt):
             status.set(state="stopped", message="interrupted")
             return 130

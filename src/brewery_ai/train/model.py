@@ -9,13 +9,11 @@ from typing import Any
 
 import torch
 
+from brewery_ai.train.samples import hf_token, load_tokenizer  # noqa: F401  (torch-free home is train/samples.py)
+
 log = logging.getLogger("brewery.train")
 
 SPECIAL_TOKEN_RE = re.compile(r"<\|[^|<>]+\|>|<[a-z_]+\|>|<\|[a-z_]+>|<(?:start|end)_of_turn>")
-
-
-def hf_token() -> str | None:
-    return os.environ.get("HF_TOKEN") or os.environ.get("HUGGING_FACE_HUB_TOKEN") or None
 
 
 def device_info() -> dict[str, Any]:
@@ -51,27 +49,6 @@ def resolve_precision(requested: str, model_info: Any) -> str:
 
 def torch_dtype(precision: str) -> torch.dtype:
     return {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}[precision]
-
-
-def load_tokenizer(model_info: Any, source: str | None = None) -> Any:
-    """Tokenizer of the base model (or of an earlier stage's output folder ``source``)."""
-    from transformers import AutoTokenizer
-
-    tok = AutoTokenizer.from_pretrained(source or model_info.id, token=hf_token())
-    donor_id = model_info.variant.chat_template_from
-    if donor_id and donor_id != model_info.id and not getattr(tok, "chat_template", None):
-        donor = AutoTokenizer.from_pretrained(donor_id, token=hf_token())
-        tok.chat_template = donor.chat_template
-    if not getattr(tok, "chat_template", None) and model_info.modality == "text":
-        raise RuntimeError(f"{model_info.id} has no chat template; set chat_template_from in its profile")
-    if tok.pad_token is None:
-        wanted = model_info.profile.loading.get("pad_token")
-        if wanted and tok.convert_tokens_to_ids(wanted) not in (None, tok.unk_token_id):
-            tok.pad_token = wanted
-        else:
-            tok.pad_token = tok.eos_token
-    tok.padding_side = "right"
-    return tok
 
 
 def stop_token_ids(tokenizer: Any, model_info: Any) -> list[int]:

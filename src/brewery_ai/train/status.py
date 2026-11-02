@@ -73,7 +73,19 @@ class StatusWriter:
         self.data["updated_at"] = _now()
         tmp = self.path.with_name(f".{STATUS_FILE}.{os.getpid()}.tmp")
         tmp.write_text(json.dumps(self.data, indent=1), encoding="utf-8")
-        os.replace(tmp, self.path)
+        _replace_with_retry(tmp, self.path)
+
+
+def _replace_with_retry(tmp: Path, dest: Path, attempts: int = 40, delay: float = 0.05) -> None:
+    """``os.replace`` that survives a reader holding the file open (Windows answers "Access is denied" then)."""
+    for i in range(attempts):
+        try:
+            os.replace(tmp, dest)
+            return
+        except PermissionError:
+            if i == attempts - 1:
+                raise
+            time.sleep(delay)
 
 
 def read_status(run_dir: str | Path) -> dict[str, Any] | None:

@@ -79,6 +79,7 @@ class RuntimeSettings(BaseModel):
     save_steps: int | None = None
     save_total_limit: int = 2
     num_gpus: int = 1
+    backend: Literal["torch", "cpuforge"] = "torch"  # "cpuforge": train on the CPU with the cpuforge worker (see train/cpuforge.py)
 
 
 class DPOSettings(BaseModel):
@@ -178,6 +179,12 @@ def validate_job(job: TrainJob, model: Any) -> tuple[list[str], list[str]]:
     """
     errors: list[str] = []
     warnings: list[str] = []
+    if job.runtime.backend == "cpuforge":
+        from brewery_ai.train.cpuforge import unsupported
+
+        errors.extend(unsupported(job))
+        if errors:
+            return errors, warnings
     if job.objective != "sft" and not model.guidelines.objective_allowed(job.objective):
         errors.append(f"objective '{job.objective}' is not supported for {model.id}")
         return errors, warnings
@@ -402,6 +409,7 @@ def build_job(
         gradient_checkpointing=bool(overrides.pop("gradient_checkpointing", True)),
         seed=int(overrides.pop("seed", 42)),
         num_gpus=num_gpus,
+        backend=overrides.pop("backend", "torch"),
     )
     data = DataConfig(
         train=train_path,

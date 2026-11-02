@@ -96,7 +96,9 @@ def _known_job(ctx: ToolContext, job_id: str) -> dict[str, Any] | None:
     """Prepare one training stage with Brewery's per-model guidelines: fills every hyperparameter, sizes batch and
 gradient accumulation to the GPU, estimates memory/time/cost, and stores it as a draft. Never invent hyperparameters:
 pass user wishes as `overrides` (e.g. {"epochs": 3, "lora_rank": 32, "learning_rate": 1e-4, "max_seq_len": 4096,
-"beta": 0.2, "reasoning": "drop", "lora_targets": "attention", "train_embeddings": true, "trigger_word": "sks"}).
+"beta": 0.2, "reasoning": "drop", "lora_targets": "attention", "train_embeddings": true, "trigger_word": "sks").
+"backend": "cpuforge" trains on the CPU with the cpuforge worker instead of a GPU (text sft/cpt, LoRA or full, models up to
+about 0.6B for overnight runs; no DPO, QLoRA or image models), see docs/cpuforge.md.
 Image LoRAs render preview images while training (a "before" set at step 0, then one set per checkpoint) that the
 user sees in watch_training: pass 2-4 "sample_prompts" with the trigger word (one close to the training images, one
 new scene); optional "sample_every" (steps, 0 = off) and "sample_steps" (denoising steps, default 30).
